@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    name: test ${{ matrix.py }} - ${{ matrix.os }}
+    name: test ${{ matrix.py }} - ${{ matrix.os }} - polars=${{ matrix.polars_version }}
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
@@ -50,7 +50,7 @@ jobs:
 #          PYTEST_ADDOPTS: "-vv --durations=10"
 
   lint:
-    name: lint ${{ matrix.py }} - ${{ matrix.os }}
+    name: lint ${{ matrix.py }} - ${{ matrix.os }} - polars=${{ matrix.polars_version }}
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
