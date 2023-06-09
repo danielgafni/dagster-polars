@@ -22,7 +22,7 @@ def test_polars_parquet_io_manager_stats_metadata(
 
     handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream")))
 
-    stats = handled_output_events[0].event_specific_data.metadata["stats"].value
+    stats = handled_output_events[0].event_specific_data.metadata["stats"].value  # type: ignore  # noqa
 
     assert (
         DeepDiff(
@@ -77,6 +77,7 @@ def test_polars_parquet_io_manager(tmp_polars_parquet_io_manager: IOManagerDefin
     handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream")))
 
     saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore[index,union-attr]
+    assert isinstance(saved_path, str)
     pl_testing.assert_frame_equal(df, pl.read_parquet(saved_path))
 
 
@@ -107,4 +108,5 @@ def test_polars_parquet_io_manager_nested_dtypes(
     handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream")))
 
     saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore[index,union-attr]
+    assert isinstance(saved_path, str)
     pl_testing.assert_frame_equal(df, pl.read_parquet(saved_path))
