@@ -1,4 +1,5 @@
 import json
+import sys
 from abc import abstractmethod
 from datetime import date, datetime, time, timedelta
 from pprint import pformat
@@ -21,10 +22,29 @@ from dagster import _check as check
 from pydantic.fields import Field, PrivateAttr
 from upath import UPath
 
+POLARS_DATA_FRAME_ANNOTATIONS = [
+    pl.DataFrame,
+    Dict[str, pl.DataFrame],
+    Mapping[str, pl.DataFrame],
+    type(None),
+    None,
+]
+
+POLARS_LAZY_FRAME_ANNOTATIONS = [
+    pl.LazyFrame,
+    Dict[str, pl.LazyFrame],
+    Mapping[str, pl.LazyFrame],
+]
+
+
+if sys.version >= "3.9":
+    POLARS_DATA_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])
+    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])
+
 
 def cast_polars_single_value_to_dagster_table_types(val: Any):
     if val is None:
-        return None
+        return ""
     elif isinstance(val, (date, datetime, time, timedelta)):
         return str(val)
     elif isinstance(val, (list, dict)):
@@ -68,7 +88,9 @@ def get_metadata_table_and_schema(
             records=[
                 TableRecord(
                     {
-                        col: cast_polars_single_value_to_dagster_table_types(df_sample.to_dicts()[i][col])
+                        col: cast_polars_single_value_to_dagster_table_types(  # type: ignore
+                            df_sample.to_dicts()[i][col]
+                        )
                         for col in df.columns
                     }
                 )
@@ -133,6 +155,8 @@ class BasePolarsIOManager(ConfigurableIOManager, UPathIOManager):
         self.dump_df_to_path(context=context, df=obj, path=path)
 
     def load_from_path(self, path: UPath, context: InputContext) -> Union[pl.DataFrame, pl.LazyFrame]:
+        assert context.metadata is not None
+
         ldf = self.scan_df_from_path(path=path, context=context)
 
         columns = context.metadata.get("columns")
