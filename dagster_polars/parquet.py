@@ -12,9 +12,7 @@ from dagster_polars.base_io_manager import BasePolarsIOManager
 class PolarsParquetIOManager(BasePolarsIOManager):
     extension: str = ".parquet"
 
-    __doc__ = BasePolarsIOManager.__doc__ + """  # type: ignore
-        Works with Parquet files
-        """
+    __doc__ = BasePolarsIOManager.__doc__ + """\nWorks with Parquet files"""  # type: ignore
 
     def dump_df_to_path(self, context: OutputContext, df: pl.DataFrame, path: UPath):
         with path.open("wb") as file:
