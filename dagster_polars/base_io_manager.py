@@ -38,8 +38,8 @@ POLARS_LAZY_FRAME_ANNOTATIONS = [
 
 
 if sys.version >= "3.9":
-    POLARS_DATA_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])
-    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])
+    POLARS_DATA_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
+    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
 
 
 def cast_polars_single_value_to_dagster_table_types(val: Any):
@@ -184,6 +184,7 @@ class BasePolarsIOManager(ConfigurableIOManager, UPathIOManager):
             raise NotImplementedError(f"Can't load object for type annotation {context.dagster_type.typing_type}")
 
     def get_metadata(self, context: OutputContext, obj: pl.DataFrame) -> Dict[str, MetadataValue]:
+        assert context.metadata is not None
         schema, table = get_metadata_table_and_schema(
             context=context, df=obj, descriptions=context.metadata.get("descriptions")
         )

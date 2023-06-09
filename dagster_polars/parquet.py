@@ -12,6 +12,10 @@ from dagster_polars.base_io_manager import BasePolarsIOManager
 class PolarsParquetIOManager(BasePolarsIOManager):
     extension: str = ".parquet"
 
+    __doc__ = BasePolarsIOManager.__doc__ + """
+        Works with Parquet files
+        """
+
     def dump_df_to_path(self, context: OutputContext, df: pl.DataFrame, path: UPath):
         with path.open("wb") as file:
             df.write_parquet(file)
@@ -25,11 +29,3 @@ class PolarsParquetIOManager(BasePolarsIOManager):
             pass
 
         return pl.scan_pyarrow_dataset(ds.dataset(str(path), filesystem=fs))
-
-
-PolarsParquetIOManager.__doc__ = (
-    BasePolarsIOManager.__doc__
-    + """
-    Works with Parquet files
-    """
-)
