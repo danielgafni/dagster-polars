@@ -33,6 +33,10 @@ jobs:
         uses: abatilo/actions-poetry@v2
         with:
           poetry-version: 1.4.2
+      - name: Configure Poetry
+        run: poetry config virtualenvs.create false
+      - name: Install Dependencies
+        run: poetry install --all-extras --sync
       - uses: pre-commit/action@v3.0.0
       - name: Setup test suite
         run: tox4 r -vv --notest
