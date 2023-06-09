@@ -35,8 +35,8 @@ jobs:
           virtualenvs-in-project: false
           installer-parallel: true
       - name: Setup test suite
-        run: tox4 r -vv --notest
+        run: tox r -vv --notest
       - name: Run test suite
-        run: tox4 r --skip-pkg-install
+        run: tox r --skip-pkg-install
         env:
           PYTEST_ADDOPTS: "-vv --durations=10"
