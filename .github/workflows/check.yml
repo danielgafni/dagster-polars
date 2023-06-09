@@ -31,7 +31,7 @@ jobs:
         uses: snok/install-poetry@v1
         with:
           version: 1.4.2
-          virtualenvs-create: true
+          virtualenvs-create: false
           virtualenvs-in-project: false
           installer-parallel: true
       - name: Setup test suite
@@ -40,3 +40,34 @@ jobs:
         run: tox r --skip-pkg-install
         env:
           PYTEST_ADDOPTS: "-vv --durations=10"
+
+  lint:
+    name: test ${{ matrix.py }} - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - Ubuntu
+          - Windows
+          - MacOs
+        py:
+          - "3.11"
+          - "3.10"
+          - "3.9"
+          - "3.8"
+    steps:
+      - name: Setup python for test ${{ matrix.py }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py }}
+      - uses: actions/checkout@v2
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.4.2
+          virtualenvs-create: false
+          virtualenvs-in-project: false
+          installer-parallel: true
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
