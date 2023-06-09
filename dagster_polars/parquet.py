@@ -12,7 +12,7 @@ from dagster_polars.base_io_manager import BasePolarsIOManager
 class PolarsParquetIOManager(BasePolarsIOManager):
     extension: str = ".parquet"
 
-    __doc__ = BasePolarsIOManager.__doc__ + """
+    __doc__ = BasePolarsIOManager.__doc__ + """  # type: ignore
         Works with Parquet files
         """
 
