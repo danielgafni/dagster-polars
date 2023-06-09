@@ -34,8 +34,8 @@ jobs:
           virtualenvs-create: false
           virtualenvs-in-project: false
           installer-parallel: true
-      - name: Configure Poetry
-        run: poetry config virtualenvs.create false
+      - name: Install dependencies
+        run: poetry install --all-extras --sync
       - name: Setup test suite
         run: tox r -vv --notest
       - name: Run test suite
@@ -71,7 +71,7 @@ jobs:
           virtualenvs-create: false
           virtualenvs-in-project: false
           installer-parallel: true
-      - name: Configure Poetry
-        run: poetry config virtualenvs.create false
+      - name: Install dependencies
+        run: poetry install --all-extras --sync
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
