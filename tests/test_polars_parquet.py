@@ -110,3 +110,30 @@ def test_polars_parquet_io_manager_nested_dtypes(
     saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore[index,union-attr]
     assert isinstance(saved_path, str)
     pl_testing.assert_frame_equal(df, pl.read_parquet(saved_path))
+
+
+def test_polars_parquet_io_manager_legacy(
+    tmp_polars_parquet_io_manager_legacy: IOManagerDefinition,
+):
+    df = pl.DataFrame(
+        {
+            "a": [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]],
+            "b": [["a", "b"], ["c", "d"], ["e", "f"], ["g", "h"], ["i", "j"]],
+            "c": [{"a": 0}, {"a": 1}, {"a": 2}, {"a": 3}, {"a": 4}],
+        }
+    )
+
+    @asset(io_manager_key="polars_parquet_io_manager")
+    def upstream() -> pl.DataFrame:
+        return df
+
+    result = materialize(
+        [upstream],
+        resources={"polars_parquet_io_manager": tmp_polars_parquet_io_manager_legacy},
+    )
+
+    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream")))
+
+    saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore[index,union-attr]
+    assert isinstance(saved_path, str)
+    pl_testing.assert_frame_equal(df, pl.read_parquet(saved_path))

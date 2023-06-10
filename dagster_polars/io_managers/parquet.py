@@ -3,7 +3,7 @@ from typing import Union
 import fsspec
 import polars as pl
 import pyarrow.dataset as ds
-from dagster import InputContext, OutputContext
+from dagster import InitResourceContext, InputContext, OutputContext, io_manager
 from upath import UPath
 
 from dagster_polars.io_managers.base import BasePolarsIOManager
@@ -27,3 +27,12 @@ class PolarsParquetIOManager(BasePolarsIOManager):
             pass
 
         return pl.scan_pyarrow_dataset(ds.dataset(str(path), filesystem=fs))
+
+
+# old non-pythonic IOManager, you are encouraged to use the `PolarsParquetIOManager` instead
+@io_manager(
+    config_schema=PolarsParquetIOManager.to_config_schema(),
+    description=PolarsParquetIOManager.__doc__,
+)
+def polars_parquet_io_manager(context: InitResourceContext):
+    return PolarsParquetIOManager.from_resource_context(context)

@@ -125,11 +125,13 @@ def get_polars_df_stats(
 class BasePolarsIOManager(ConfigurableIOManager, UPathIOManager):
     # This is a base class which doesn't define the specific format (parquet, csv, etc) to use
     """
-    IOManager for Polars based on the UPathIOManager.
+    `IOManager` for `polars` based on the `UPathIOManager`.
     Features:
-     - returns the correct type (DataFrame or LazyFrame) based on the type annotation
-     - logs various metadata about the DataFrame
+     - returns the correct type (`polars.DataFrame` or `polars.LazyFrame`) based on the type annotation
+     - logs various metadata about the DataFrame - size, schema, sample, stats, ...
      - the "columns" input metadata value can be used to select a subset of columns
+     - inherits all the features of the `UPathIOManager` - works with local and remote filesystems (like S3),
+         supports loading multiple partitions, ...
     """
 
     base_dir: Optional[str] = Field(default=None, description="Base directory for storing files.")
