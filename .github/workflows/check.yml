@@ -1,0 +1,83 @@
+name: check
+on:
+  push:
+#  pull_request:
+  schedule:
+    - cron: "0 8 * * *"
+
+jobs:
+  test:
+    name: test ${{ matrix.py }} - ${{ matrix.os }} - polars=${{ matrix.polars_version }}
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - Ubuntu
+          - MacOs
+        py:
+          - "3.11"
+          - "3.10"
+          - "3.9"
+          - "3.8"
+        polars_version:
+          - "0.17.0"
+          - "0.18.0"
+    steps:
+      - name: Setup python for test ${{ matrix.py }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py }}
+      - uses: actions/checkout@v2
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.4.2
+          virtualenvs-create: false
+          virtualenvs-in-project: false
+          installer-parallel: true
+      - name: Install dependencies
+        run: poetry install --all-extras --sync && pip install polars~=${{ matrix.polars_version }}
+      - name: Run tests
+        run: pytest -v .
+#      - name: Setup test suite
+#        run: tox r -vv --notest
+#      - name: Run test suite
+#        run: tox r --skip-pkg-install
+#        env:
+#          PYTEST_ADDOPTS: "-vv --durations=10"
+
+  lint:
+    name: lint ${{ matrix.py }} - ${{ matrix.os }} - polars=${{ matrix.polars_version }}
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - Ubuntu
+          - MacOs
+        py:
+          - "3.11"
+          - "3.10"
+          - "3.9"
+          - "3.8"
+        polars_version:
+          - "0.17.0"
+          - "0.18.0"
+    steps:
+      - name: Setup python for test ${{ matrix.py }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py }}
+      - uses: actions/checkout@v2
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.4.2
+          virtualenvs-create: false
+          virtualenvs-in-project: false
+          installer-parallel: true
+      - name: Install dependencies
+        run: poetry install --all-extras --sync && pip install polars~=${{ matrix.polars_version }}
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
