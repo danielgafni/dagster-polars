@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 from _pytest.tmpdir import TempPathFactory
+from dagster import IOManagerDefinition
 
 from dagster_polars import PolarsParquetIOManager, polars_parquet_io_manager
 
@@ -23,5 +24,5 @@ def tmp_polars_parquet_io_manager(dagster_home: Path) -> PolarsParquetIOManager:
 
 
 @pytest.fixture(scope="session")
-def tmp_polars_parquet_io_manager_legacy(dagster_home: Path) -> PolarsParquetIOManager:
+def tmp_polars_parquet_io_manager_legacy(dagster_home: Path) -> IOManagerDefinition:
     return polars_parquet_io_manager.configured({"base_dir": str(dagster_home)})

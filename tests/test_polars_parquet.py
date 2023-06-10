@@ -5,9 +5,11 @@ from deepdiff import DeepDiff
 from hypothesis import given, settings
 from polars.testing.parametric import dataframes
 
+from dagster_polars import PolarsParquetIOManager
+
 
 def test_polars_parquet_io_manager_stats_metadata(
-    tmp_polars_parquet_io_manager: IOManagerDefinition,
+    tmp_polars_parquet_io_manager: PolarsParquetIOManager,
 ):
     df = pl.DataFrame({"a": [0, 1, None], "b": ["a", "b", "c"]})
 
@@ -60,7 +62,7 @@ def test_polars_parquet_io_manager_stats_metadata(
 # list(pl.TEMPORAL_DTYPES | pl.FLOAT_DTYPES | pl.INTEGER_DTYPES) + [pl.Boolean, pl.Utf8]]
 @given(df=dataframes(excluded_dtypes=[pl.Categorical], min_size=5))
 @settings(max_examples=100, deadline=None)
-def test_polars_parquet_io_manager(tmp_polars_parquet_io_manager: IOManagerDefinition, df: pl.DataFrame):
+def test_polars_parquet_io_manager(tmp_polars_parquet_io_manager: PolarsParquetIOManager, df: pl.DataFrame):
     @asset(io_manager_key="polars_parquet_io_manager")
     def upstream() -> pl.DataFrame:
         return df
@@ -82,7 +84,7 @@ def test_polars_parquet_io_manager(tmp_polars_parquet_io_manager: IOManagerDefin
 
 
 def test_polars_parquet_io_manager_nested_dtypes(
-    tmp_polars_parquet_io_manager: IOManagerDefinition,
+    tmp_polars_parquet_io_manager: PolarsParquetIOManager,
 ):
     df = pl.DataFrame(
         {

@@ -47,6 +47,19 @@ definitions = Definitions(
 )
 ```
 
+## Development
+
+### Installation
+```shell
+poetry install
+poetry run pre-commit install
+```
+
+### Testing
+```shell
+poetry run pytest
+```
+
 ## TODO
 
  - [ ] Data validation like in [dagster-pandas](https://docs.dagster.io/integrations/pandas#validating-pandas-dataframes-with-dagster-types)

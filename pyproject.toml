@@ -2,7 +2,7 @@
 name = "dagster-polars"
 version = "0.0.0"
 description = ""
-authors = ["Daniel Gafni"]
+authors = ["Daniel Gafni <danielgafni16@gmail.com>"]
 readme = "README.md"
 packages = [{include = "dagster_polars"}]
 
