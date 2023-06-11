@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import sys
 from abc import abstractmethod
@@ -25,6 +27,7 @@ from upath import UPath
 POLARS_DATA_FRAME_ANNOTATIONS = [
     pl.DataFrame,
     Dict[str, pl.DataFrame],
+    dict[str, pl.DataFrame],
     Mapping[str, pl.DataFrame],
     type(None),
     None,
@@ -33,6 +36,7 @@ POLARS_DATA_FRAME_ANNOTATIONS = [
 POLARS_LAZY_FRAME_ANNOTATIONS = [
     pl.LazyFrame,
     Dict[str, pl.LazyFrame],
+    dict[str, pl.LazyFrame],
     Mapping[str, pl.LazyFrame],
 ]
 
@@ -56,7 +60,7 @@ def cast_polars_single_value_to_dagster_table_types(val: Any):
 
 def get_metadata_schema(
     df: pl.DataFrame,
-    descriptions: Optional[Dict[str, str]] = None,
+    descriptions: dict[str, str] | None = None,
 ):
     descriptions = descriptions or {}
     return TableSchema(
@@ -70,10 +74,10 @@ def get_metadata_schema(
 def get_metadata_table_and_schema(
     context: OutputContext,
     df: pl.DataFrame,
-    n_rows: Optional[int] = 5,
-    fraction: Optional[float] = None,
-    descriptions: Optional[Dict[str, str]] = None,
-) -> Tuple[TableSchema, Optional[TableMetadataValue]]:
+    n_rows: int | None = 5,
+    fraction: float | None = None,
+    descriptions: dict[str, str] | None = None,
+) -> tuple[TableSchema, TableMetadataValue | None]:
     assert not fraction and n_rows, "only one of n_rows and frac should be set"
     n_rows = min(n_rows, len(df))
 
@@ -114,7 +118,7 @@ def get_metadata_table_and_schema(
 
 def get_polars_df_stats(
     df: pl.DataFrame,
-) -> Dict[str, Dict[str, Union[str, int, float]]]:
+) -> dict[str, dict[str, str | int | float]]:
     describe = df.describe().fill_null(pl.lit("null"))
     return {
         col: {stat: describe[col][i] for i, stat in enumerate(describe["describe"].to_list())}
@@ -134,7 +138,7 @@ class BasePolarsIOManager(ConfigurableIOManager, UPathIOManager):
          supports loading multiple partitions, ...
     """
 
-    base_dir: Optional[str] = Field(default=None, description="Base directory for storing files.")
+    base_dir: str | None = Field(default=None, description="Base directory for storing files.")
 
     _base_path: UPath = PrivateAttr()
 
@@ -156,7 +160,7 @@ class BasePolarsIOManager(ConfigurableIOManager, UPathIOManager):
     def dump_to_path(self, context: OutputContext, obj: pl.DataFrame, path: UPath):
         self.dump_df_to_path(context=context, df=obj, path=path)
 
-    def load_from_path(self, path: UPath, context: InputContext) -> Union[pl.DataFrame, pl.LazyFrame]:
+    def load_from_path(self, path: UPath, context: InputContext) -> pl.DataFrame | pl.LazyFrame:
         assert context.metadata is not None
 
         ldf = self.scan_df_from_path(path=path, context=context)
@@ -166,26 +170,14 @@ class BasePolarsIOManager(ConfigurableIOManager, UPathIOManager):
             context.log.debug(f"Loading {columns=}")
             ldf = ldf.select(columns)
 
-        if context.dagster_type.typing_type in (
-            pl.DataFrame,
-            Dict[str, pl.DataFrame],
-            Dict[str, pl.DataFrame],
-            Mapping[str, pl.DataFrame],
-            type(None),
-            None,
-        ):
+        if context.dagster_type.typing_type in POLARS_DATA_FRAME_ANNOTATIONS:
             return ldf.collect(streaming=True)
-        elif context.dagster_type.typing_type in (
-            pl.LazyFrame,
-            Dict[str, pl.LazyFrame],
-            Dict[str, pl.LazyFrame],
-            Mapping[str, pl.LazyFrame],
-        ):
+        elif context.dagster_type.typing_type in POLARS_LAZY_FRAME_ANNOTATIONS:
             return ldf
         else:
             raise NotImplementedError(f"Can't load object for type annotation {context.dagster_type.typing_type}")
 
-    def get_metadata(self, context: OutputContext, obj: pl.DataFrame) -> Dict[str, MetadataValue]:
+    def get_metadata(self, context: OutputContext, obj: pl.DataFrame) -> dict[str, MetadataValue]:
         assert context.metadata is not None
         schema, table = get_metadata_table_and_schema(
             context=context, df=obj, descriptions=context.metadata.get("descriptions")

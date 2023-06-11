@@ -14,11 +14,11 @@ repos:
       - id: check-docstring-first
       - id: check-merge-conflict
       - id: detect-private-key
-#  - repo: https://github.com/asottile/pyupgrade
-#    rev: v3.4.0
-#    hooks:
-#      - id: pyupgrade
-#        entry: pyupgrade --py38-plus
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.4.0
+    hooks:
+      - id: pyupgrade
+        entry: pyupgrade --py38-plus
   - repo: local
     hooks:
       - id: isort
