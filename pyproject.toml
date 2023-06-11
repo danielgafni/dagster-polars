@@ -12,7 +12,7 @@ keywords = [
     "dagster",
     "polars",
     "ETL",
-    "dataframes",
+    "dataframe",
 ]
 classifiers = [
     "Programming Language :: Python :: 3.8",
@@ -49,6 +49,18 @@ black = "^23.3.0"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.poetry-dynamic-versioning]
+enable = true
+strict = false
+vcs = "git"
+style = "pep440"
+dirty = true
+
+[tool.poetry-dynamic-versioning.substitution]
+files = [
+    "pyproject.toml",
+    "dagster_polars/_version.py"
+]
 
 [tool.pytest.ini_options]
 log_cli = true

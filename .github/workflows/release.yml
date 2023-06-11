@@ -1,0 +1,123 @@
+name: Release
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+jobs:
+  test:
+    name: test ${{ matrix.py }} - ${{ matrix.os }} - polars=${{ matrix.polars_version }}
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - Ubuntu
+          - MacOs
+        py:
+          - "3.11"
+          - "3.10"
+          - "3.9"
+          - "3.8"
+        polars_version:
+          - "0.17.0"
+          - "0.18.0"
+    steps:
+      - name: Setup python for test ${{ matrix.py }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py }}
+      - uses: actions/checkout@v2
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.4.2
+          virtualenvs-create: false
+          virtualenvs-in-project: false
+          installer-parallel: true
+      - name: Install dependencies
+        run: poetry install --all-extras --sync && pip install polars~=${{ matrix.polars_version }}
+      - name: Run tests
+        run: pytest -v .
+    #      - name: Setup test suite
+    #        run: tox r -vv --notest
+    #      - name: Run test suite
+    #        run: tox r --skip-pkg-install
+    #        env:
+    #          PYTEST_ADDOPTS: "-vv --durations=10"
+
+    lint:
+      name: lint ${{ matrix.py }} - ${{ matrix.os }} - polars=${{ matrix.polars_version }}
+      runs-on: ${{ matrix.os }}-latest
+      strategy:
+        fail-fast: false
+        matrix:
+          os:
+            - Ubuntu
+          py:
+            - "3.11"
+            - "3.10"
+            - "3.9"
+            - "3.8"
+          polars_version:
+            - "0.17.0"
+            - "0.18.0"
+      steps:
+        - name: Setup python for test ${{ matrix.py }}
+          uses: actions/setup-python@v2
+          with:
+            python-version: ${{ matrix.py }}
+        - uses: actions/checkout@v2
+        - name: Install and configure Poetry
+          uses: snok/install-poetry@v1
+          with:
+            version: 1.4.2
+            virtualenvs-create: false
+            virtualenvs-in-project: false
+            installer-parallel: true
+        - name: Install dependencies
+          run: poetry install --all-extras --sync && pip install polars~=${{ matrix.polars_version }}
+        - name: Run pre-commit hooks
+          run: pre-commit run --all-files
+
+  publish:
+    needs:
+      - lint
+      - test
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.9]
+        poetry-version: [1.1.2]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Setup python for test ${{ matrix.py }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py }}
+      - uses: actions/checkout@v2
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.4.2
+          virtualenvs-create: false
+          virtualenvs-in-project: false
+          installer-parallel: true
+      - name: Install poetry-dynamic-versioning plugin
+        run: poetry self add poetry-dynamic-versioning@0.21.4
+      - name: Create Release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Publish to PyPI
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          poetry config pypi-token.pypi $PYPI_TOKEN
+          poetry publish --build
