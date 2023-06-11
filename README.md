@@ -10,7 +10,7 @@
    - inherits all the features of the `UPathIOManager` - works with local and remote filesystems (like S3),
        supports loading multiple partitions (use `dict[str, pl.DataFrame]` type annotation), ...
    - Implemented serialization formats:
-     - `PolarsParquetIOManager` - for reading and writing files in Apache Parquet format
+     - `PolarsParquetIOManager` - for reading and writing files in Apache Parquet format. Supports reading partitioned Parquet datasets (for example, often produced by Spark).
 
 ## Quickstart
 
