@@ -1,7 +1,6 @@
 name: check
 on:
   push:
-#  pull_request:
   schedule:
     - cron: "0 8 * * *"
 
@@ -40,12 +39,6 @@ jobs:
         run: poetry install --all-extras --sync && pip install polars~=${{ matrix.polars_version }}
       - name: Run tests
         run: pytest -v .
-#      - name: Setup test suite
-#        run: tox r -vv --notest
-#      - name: Run test suite
-#        run: tox r --skip-pkg-install
-#        env:
-#          PYTEST_ADDOPTS: "-vv --durations=10"
 
   lint:
     name: lint ${{ matrix.py }} - ${{ matrix.os }} - polars=${{ matrix.polars_version }}
@@ -55,7 +48,6 @@ jobs:
       matrix:
         os:
           - Ubuntu
-          - MacOs
         py:
           - "3.11"
           - "3.10"

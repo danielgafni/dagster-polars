@@ -28,12 +28,12 @@ repos:
         pass_filenames: false
       - id: ruff
         name: ruff
-        entry: ruff --fix .
+        entry: ruff --fix --diff .
         language: system
         pass_filenames: false
       - id: black
         name: black
-        entry: black .
+        entry: black --diff .
         language: system
         pass_filenames: false
 
