@@ -23,6 +23,7 @@ from pydantic.fields import Field, PrivateAttr
 from upath import UPath
 
 POLARS_DATA_FRAME_ANNOTATIONS = [
+    Any,
     pl.DataFrame,
     Dict[str, pl.DataFrame],
     Mapping[str, pl.DataFrame],
@@ -166,21 +167,9 @@ class BasePolarsIOManager(ConfigurableIOManager, UPathIOManager):
             context.log.debug(f"Loading {columns=}")
             ldf = ldf.select(columns)
 
-        if context.dagster_type.typing_type in (
-            pl.DataFrame,
-            Dict[str, pl.DataFrame],
-            Dict[str, pl.DataFrame],
-            Mapping[str, pl.DataFrame],
-            type(None),
-            None,
-        ):
+        if context.dagster_type.typing_type in POLARS_DATA_FRAME_ANNOTATIONS:
             return ldf.collect(streaming=True)
-        elif context.dagster_type.typing_type in (
-            pl.LazyFrame,
-            Dict[str, pl.LazyFrame],
-            Dict[str, pl.LazyFrame],
-            Mapping[str, pl.LazyFrame],
-        ):
+        elif context.dagster_type.typing_type in POLARS_LAZY_FRAME_ANNOTATIONS:
             return ldf
         else:
             raise NotImplementedError(f"Can't load object for type annotation {context.dagster_type.typing_type}")
