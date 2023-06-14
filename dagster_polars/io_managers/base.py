@@ -123,7 +123,7 @@ def get_polars_df_stats(
     }
 
 
-class BasePolarsIOManager(ConfigurableIOManager, UPathIOManager):
+class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     # This is a base class which doesn't define the specific format (parquet, csv, etc) to use
     """
     `IOManager` for `polars` based on the `UPathIOManager`.
