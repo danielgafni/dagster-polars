@@ -3,7 +3,7 @@
 [Polars](https://github.com/pola-rs/polars) integration library for [Dagster](https://github.com/dagster-io/dagster).
 
 ## Features
- - `PolarsIOManager` is a base class for IO managers that work with Polars DataFrames. Shouldn't be used directly unless you want to implement your own `IOManager`.
+ - `BasePolarsUPathIOManager` is a base class for IO managers that work with Polars DataFrames. Shouldn't be used directly unless you want to implement your own `IOManager`.
    - returns the correct type (`polars.DataFrame` or `polars.LazyFrame`) based on the type annotation
    - logs various metadata about the DataFrame - size, schema, sample, stats, ...
    - the "columns" input metadata value can be used to select a subset of columns
@@ -22,9 +22,9 @@ pip install dagster-polars
 
 ### Usage
 ```python
+import polars as pl
 from dagster import asset, Definitions
 from dagster_polars import PolarsParquetIOManager
-import polars as pl
 
 
 @asset(io_manager_key="polars_parquet_io_manager")
