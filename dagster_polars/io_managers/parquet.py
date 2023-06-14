@@ -6,13 +6,13 @@ import pyarrow.dataset as ds
 from dagster import InitResourceContext, InputContext, OutputContext, io_manager
 from upath import UPath
 
-from dagster_polars.io_managers.base import BasePolarsIOManager
+from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 
 
-class PolarsParquetIOManager(BasePolarsIOManager):
+class PolarsParquetIOManager(BasePolarsUPathIOManager):
     extension: str = ".parquet"
 
-    __doc__ = BasePolarsIOManager.__doc__ + """\nWorks with Parquet files"""  # type: ignore
+    __doc__ = BasePolarsUPathIOManager.__doc__ + """\nWorks with Parquet files"""  # type: ignore
 
     def dump_df_to_path(self, context: OutputContext, df: pl.DataFrame, path: UPath):
         with path.open("wb") as file:
