@@ -452,6 +452,31 @@ cli = ["click (==8.1.3)", "pyyaml (==6.0)"]
 optimize = ["orjson"]
 
 [[package]]
+name = "deltalake"
+version = "0.10.0"
+description = "Native Delta Lake Python binding based on delta-rs with Pandas integration"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "deltalake-0.10.0-cp37-abi3-macosx_10_7_x86_64.whl", hash = "sha256:1aef72679268324e7cc556f03969b92235076b6edcecae7a2f85ac930b5fb9b9"},
+    {file = "deltalake-0.10.0-cp37-abi3-macosx_10_9_x86_64.macosx_11_0_arm64.macosx_10_9_universal2.whl", hash = "sha256:91e801b78e298946950b07bf0573e4cf012d6259ac294bcac662b6d746f95596"},
+    {file = "deltalake-0.10.0-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:437f8ee9f28a9cd8454e8700c3dd88f5ad33c2ec9a7192356b55b23fee50259c"},
+    {file = "deltalake-0.10.0-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f532b3c3dc8437fc26279a296bc576bdf79b167e1d4864847ca7c5ec7b3915b6"},
+    {file = "deltalake-0.10.0-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:42212ee879735d476772a9c1d1ca3e43ef15893a301796baffe94db3578e98ca"},
+    {file = "deltalake-0.10.0-cp37-abi3-win_amd64.whl", hash = "sha256:88c7759d8a97ec882dd0309eb097506c1682637ca4a0dcbe04d6482eedd298c9"},
+    {file = "deltalake-0.10.0.tar.gz", hash = "sha256:b8793a1c7a1219c8935ed9926a6870c9341597396c0f50bf6ff98c323d06ee0f"},
+]
+
+[package.dependencies]
+pyarrow = ">=7"
+
+[package.extras]
+devel = ["black", "mypy", "packaging (>=20)", "pytest", "pytest-benchmark", "pytest-cov", "pytest-mock", "pytest-timeout", "ruff", "sphinx (<=4.5)", "sphinx-rtd-theme", "toml", "wheel"]
+pandas = ["pandas (<2)"]
+pyspark = ["delta-spark", "numpy (==1.22.2)", "pyspark"]
+
+[[package]]
 name = "distlib"
 version = "0.3.6"
 description = "Distribution utilities"
@@ -2522,4 +2547,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "c96da6286c4588198e32be9be2699d9aa29f38f324653ba056986f9ae6275509"
+content-hash = "652451d8e312f1b91034889b03fbfe0e5e64b64b3b5ca193f3fb0db7aab20c06"
