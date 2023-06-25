@@ -108,7 +108,7 @@ def get_polars_df_stats(
     }
 
 
-def get_polars_metadata(context: OutputContext, df: pl.DataFrame) -> dict[str, MetadataValue]:
+def get_polars_metadata(context: OutputContext, df: pl.DataFrame) -> Dict[str, MetadataValue]:
     assert context.metadata is not None
     schema, table = get_metadata_table_and_schema(
         context=context,
