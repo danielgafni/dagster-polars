@@ -3,14 +3,15 @@
 [Polars](https://github.com/pola-rs/polars) integration library for [Dagster](https://github.com/dagster-io/dagster).
 
 ## Features
+ - All IOManagers log various metadata about the DataFrame - size, schema, sample, stats, ...
+ - For all IOManagers the `"columns"` input metadata key can be used to select a subset of columns to load
  - `BasePolarsUPathIOManager` is a base class for IO managers that work with Polars DataFrames. Shouldn't be used directly unless you want to implement your own `IOManager`.
    - returns the correct type (`polars.DataFrame` or `polars.LazyFrame`) based on the type annotation
-   - logs various metadata about the DataFrame - size, schema, sample, stats, ...
-   - the "columns" input metadata value can be used to select a subset of columns
    - inherits all the features of the `UPathIOManager` - works with local and remote filesystems (like S3),
        supports loading multiple partitions (use `dict[str, pl.DataFrame]` type annotation), ...
    - Implemented serialization formats:
      - `PolarsParquetIOManager` - for reading and writing files in Apache Parquet format. Supports reading partitioned Parquet datasets (for example, often produced by Spark).
+ - `BigQueryPolarsIOManager` - for reading and writing data from/to [BigQuery](https://cloud.google.com/bigquery). Supports writing partitioned tables (`"partition_expr"` input metadata key must be specified).
 
 ## Quickstart
 
@@ -19,6 +20,12 @@
 ```shell
 pip install dagster-polars
 ```
+
+To use the `BigQueryPolarsIOManager` you need to install the `gcp` extra:
+```shell
+pip install 'dagster-polars[gcp]'
+```
+
 
 ### Usage
 ```python
@@ -61,6 +68,6 @@ poetry run pytest
 ```
 
 ## TODO
-
+ - [ ] Add `PolarsDeltaIOManager`
  - [ ] Data validation like in [dagster-pandas](https://docs.dagster.io/integrations/pandas#validating-pandas-dataframes-with-dagster-types)
  - [ ] Maybe use `DagsterTypeLoader` ?
