@@ -1,28 +1,11 @@
 import json
 import sys
-from abc import abstractmethod
 from datetime import date, datetime, time, timedelta
 from pprint import pformat
 from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
 import polars as pl
-from dagster import (
-    ConfigurableIOManager,
-    InitResourceContext,
-    InputContext,
-    MetadataValue,
-    OutputContext,
-    TableColumn,
-    TableMetadataValue,
-    TableRecord,
-    TableSchema,
-    UPathIOManager,
-)
-from dagster import _check as check
-from pydantic.fields import Field, PrivateAttr
-from upath import UPath
-
-from dagster_polars.io_managers.utils import get_polars_metadata
+from dagster import MetadataValue, OutputContext, TableColumn, TableMetadataValue, TableRecord, TableSchema
 
 POLARS_DATA_FRAME_ANNOTATIONS = [
     Any,
@@ -125,56 +108,24 @@ def get_polars_df_stats(
     }
 
 
-class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
-    # This is a base class which doesn't define the specific format (parquet, csv, etc) to use
-    """
-    `IOManager` for `polars` based on the `UPathIOManager`.
-    Features:
-     - returns the correct type (`polars.DataFrame` or `polars.LazyFrame`) based on the type annotation
-     - logs various metadata about the DataFrame - size, schema, sample, stats, ...
-     - the "columns" input metadata value can be used to select a subset of columns
-     - inherits all the features of the `UPathIOManager` - works with local and remote filesystems (like S3),
-         supports loading multiple partitions, ...
-    """
+def get_polars_metadata(context: OutputContext, df: pl.DataFrame) -> Dict[str, MetadataValue]:
+    assert context.metadata is not None
+    schema, table = get_metadata_table_and_schema(
+        context=context,
+        df=df,
+        n_rows=context.metadata.get("n_rows", 5),
+        fraction=context.metadata.get("fraction"),
+        descriptions=context.metadata.get("descriptions"),
+    )
 
-    base_dir: Optional[str] = Field(default=None, description="Base directory for storing files.")
+    metadata = {
+        "stats": MetadataValue.json(get_polars_df_stats(df)),
+        "row_count": MetadataValue.int(len(df)),
+    }
 
-    _base_path: UPath = PrivateAttr()
+    if table is not None:
+        metadata["table"] = table
+    else:
+        metadata["schema"] = schema
 
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._base_path = (
-            UPath(self.base_dir)
-            if self.base_dir is not None
-            else UPath(check.not_none(context.instance).storage_directory())
-        )
-
-    @abstractmethod
-    def dump_df_to_path(self, context: OutputContext, df: pl.DataFrame, path: UPath):
-        ...
-
-    @abstractmethod
-    def scan_df_from_path(self, path: UPath, context: InputContext) -> pl.LazyFrame:
-        ...
-
-    def dump_to_path(self, context: OutputContext, obj: pl.DataFrame, path: UPath):
-        self.dump_df_to_path(context=context, df=obj, path=path)
-
-    def load_from_path(self, path: UPath, context: InputContext) -> Union[pl.DataFrame, pl.LazyFrame]:
-        assert context.metadata is not None
-
-        ldf = self.scan_df_from_path(path=path, context=context)
-
-        columns = context.metadata.get("columns")
-        if columns is not None:
-            context.log.debug(f"Loading {columns=}")
-            ldf = ldf.select(columns)
-
-        if context.dagster_type.typing_type in POLARS_DATA_FRAME_ANNOTATIONS:
-            return ldf.collect(streaming=True)
-        elif context.dagster_type.typing_type in POLARS_LAZY_FRAME_ANNOTATIONS:
-            return ldf
-        else:
-            raise NotImplementedError(f"Can't load object for type annotation {context.dagster_type.typing_type}")
-
-    def get_metadata(self, context: OutputContext, obj: pl.DataFrame) -> Dict[str, MetadataValue]:
-        return get_polars_metadata(context, obj)
+    return metadata

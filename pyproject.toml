@@ -30,6 +30,12 @@ python = "^3.8"
 dagster = "^1.3.5"
 polars = ">=0.17.0"
 pyarrow = ">=8.0.0"
+dagster-gcp = "^0.19.5"
+
+
+[tool.poetry.extras]
+gcp = ["dagster-gcp"]
+
 
 
 [tool.poetry.group.dev.dependencies]
