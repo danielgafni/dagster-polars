@@ -1,5 +1,6 @@
 from dagster_polars._version import __version__
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
-from dagster_polars.io_managers.parquet import PolarsParquetIOManager, polars_parquet_io_manager
+from dagster_polars.io_managers.delta import PolarsDeltaIOManager
+from dagster_polars.io_managers.parquet import PolarsParquetIOManager
 
-__all__ = ["PolarsParquetIOManager", "BasePolarsUPathIOManager", "polars_parquet_io_manager", "__version__"]
+__all__ = ["PolarsParquetIOManager", "PolarsDeltaIOManager", "BasePolarsUPathIOManager", "__version__"]
