@@ -1,33 +1,26 @@
-import os
 from datetime import date, datetime, timedelta
-from pathlib import Path
 
 import polars as pl
 import pytest
 from _pytest.tmpdir import TempPathFactory
-from dagster import IOManagerDefinition
+from dagster import DagsterInstance, IOManagerDefinition
 
 from dagster_polars import PolarsParquetIOManager, polars_parquet_io_manager
 
 
 @pytest.fixture(scope="session")
-def dagster_home(tmp_path_factory: TempPathFactory):
-    dagster_home = tmp_path_factory.mktemp("dagster")
-    original_dagster_home = os.environ.get("DAGSTER_HOME")
-    os.environ["DAGSTER_HOME"] = str(dagster_home)
-    yield dagster_home
-    if original_dagster_home is not None:
-        os.environ["DAGSTER_HOME"] = original_dagster_home
+def dagster_instance(tmp_path_factory: TempPathFactory):
+    return DagsterInstance.ephemeral(tempdir=str(tmp_path_factory.mktemp("dagster_home")))
 
 
 @pytest.fixture(scope="session")
-def tmp_polars_parquet_io_manager(dagster_home: Path) -> PolarsParquetIOManager:
-    return PolarsParquetIOManager(base_dir=str(dagster_home))
+def tmp_polars_parquet_io_manager(dagster_instance: DagsterInstance) -> PolarsParquetIOManager:
+    return PolarsParquetIOManager(base_dir=dagster_instance.storage_directory())
 
 
 @pytest.fixture(scope="session")
-def tmp_polars_parquet_io_manager_legacy(dagster_home: Path) -> IOManagerDefinition:
-    return polars_parquet_io_manager.configured({"base_dir": str(dagster_home)})
+def tmp_polars_parquet_io_manager_legacy(dagster_instance: DagsterInstance) -> IOManagerDefinition:
+    return polars_parquet_io_manager.configured({"base_dir": dagster_instance.storage_directory()})
 
 
 @pytest.fixture
