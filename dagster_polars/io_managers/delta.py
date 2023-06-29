@@ -47,14 +47,3 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             pyarrow_options=context.metadata.get("pyarrow_options"),
             storage_options=self.get_storage_options(path),
         )
-
-    @staticmethod
-    def get_storage_options(path: UPath) -> dict:
-        storage_options = {}
-
-        try:
-            storage_options.update(path._kwargs.copy())
-        except AttributeError:
-            pass
-
-        return storage_options

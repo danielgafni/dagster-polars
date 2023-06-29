@@ -178,3 +178,14 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
     def get_metadata(self, context: OutputContext, obj: pl.DataFrame) -> Dict[str, MetadataValue]:
         return get_polars_metadata(context, obj)
+
+    @staticmethod
+    def get_storage_options(path: UPath) -> dict:
+        storage_options = {}
+
+        try:
+            storage_options.update(path._kwargs.copy())
+        except AttributeError:
+            pass
+
+        return storage_options
