@@ -1,4 +1,4 @@
-import shutil
+import os
 
 import polars as pl
 import polars.testing as pl_testing
@@ -31,4 +31,4 @@ def test_polars_parquet_io_manager(session_polars_parquet_io_manager: PolarsParq
     saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore[index,union-attr]
     assert isinstance(saved_path, str)
     pl_testing.assert_frame_equal(df, pl.read_parquet(saved_path))
-    shutil.rmtree(saved_path)  # cleanup manually because of hypothesis
+    os.remove(saved_path)  # cleanup manually because of hypothesis
