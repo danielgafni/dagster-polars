@@ -36,7 +36,9 @@ jobs:
           virtualenvs-in-project: false
           installer-parallel: true
       - name: Install dependencies
-        run: poetry install --all-extras --sync && pip install polars~=${{ matrix.polars_version }}
+        run: poetry install --all-extras --sync && pip install --ignore-installed polars~=${{ matrix.polars_version }}
+      - name: Print polars info
+        run: python -c 'import polars; print(polars.show_versions())'
       - name: Run tests
         run: pytest -v .
 
@@ -70,6 +72,6 @@ jobs:
           virtualenvs-in-project: false
           installer-parallel: true
       - name: Install dependencies
-        run: poetry install --all-extras --sync && pip install polars~=${{ matrix.polars_version }}
+        run: poetry install --all-extras --sync && pip install --ignore-installed polars~=${{ matrix.polars_version }}
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
