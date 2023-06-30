@@ -18,6 +18,16 @@ def dagster_instance(tmp_path_factory: TempPathFactory) -> DagsterInstance:
     return DagsterInstance.ephemeral(tempdir=str(tmp_path_factory.mktemp("dagster_home")))
 
 
+@pytest.fixture
+def polars_parquet_io_manager(dagster_instance: DagsterInstance) -> PolarsParquetIOManager:
+    return PolarsParquetIOManager(base_dir=dagster_instance.storage_directory())
+
+
+@pytest.fixture
+def polars_delta_io_manager(dagster_instance: DagsterInstance) -> PolarsDeltaIOManager:
+    return PolarsDeltaIOManager(base_dir=dagster_instance.storage_directory())
+
+
 @pytest.fixture(scope="session")
 def session_scoped_dagster_instance(tmp_path_factory: TempPathFactory) -> DagsterInstance:
     return DagsterInstance.ephemeral(tempdir=str(tmp_path_factory.mktemp("dagster_home_session")))

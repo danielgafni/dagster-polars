@@ -8,8 +8,8 @@ from deepdiff import DeepDiff
 from dagster_polars import BasePolarsUPathIOManager, PolarsDeltaIOManager, PolarsParquetIOManager
 
 
-def test_polars_upath_io_manager_stats_metadata(manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
-    manager, _ = manager_and_df
+def test_polars_upath_io_manager_stats_metadata(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+    manager, _ = io_manager_and_df
 
     df = pl.DataFrame({"a": [0, 1, None], "b": ["a", "b", "c"]})
 
@@ -57,8 +57,8 @@ def test_polars_upath_io_manager_stats_metadata(manager_and_df: Tuple[BasePolars
     )
 
 
-def test_polars_upath_io_manager_type_annotations(manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
-    manager, df = manager_and_df
+def test_polars_upath_io_manager_type_annotations(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+    manager, df = io_manager_and_df
 
     @asset(io_manager_def=manager)
     def upstream() -> pl.DataFrame:
@@ -113,8 +113,8 @@ def test_polars_upath_io_manager_type_annotations(manager_and_df: Tuple[BasePola
     )
 
 
-def test_polars_upath_io_manager_nested_dtypes(manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
-    manager, df = manager_and_df
+def test_polars_upath_io_manager_nested_dtypes(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+    manager, df = io_manager_and_df
 
     @asset(io_manager_def=manager)
     def upstream() -> pl.DataFrame:

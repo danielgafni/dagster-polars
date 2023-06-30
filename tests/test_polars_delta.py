@@ -51,3 +51,70 @@ def test_polars_delta_io_manager(session_polars_delta_io_manager: PolarsDeltaIOM
     assert isinstance(saved_path, str)
     pl_testing.assert_frame_equal(df, pl.read_delta(saved_path))
     shutil.rmtree(saved_path)  # cleanup manually because of hypothesis
+
+
+def test_polars_delta_io_manager_append(polars_delta_io_manager: PolarsDeltaIOManager):
+    df = pl.DataFrame(
+        {
+            "a": [1, 2, 3],
+        }
+    )
+
+    @asset(io_manager_def=polars_delta_io_manager, metadata={"mode": "append"})
+    def append_asset() -> pl.DataFrame:
+        return df
+
+    result = materialize(
+        [append_asset],
+    )
+
+    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("append_asset")))
+    saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore[index,union-attr]
+    assert isinstance(saved_path, str)
+
+    materialize(
+        [append_asset],
+    )
+
+    pl_testing.assert_frame_equal(pl.concat([df, df]), pl.read_delta(saved_path))
+
+
+def test_polars_delta_io_manager_overwrite_schema(polars_delta_io_manager: PolarsDeltaIOManager):
+    @asset(io_manager_def=polars_delta_io_manager)
+    def overwrite_schema_asset() -> pl.DataFrame:  # type: ignore
+        return pl.DataFrame(
+            {
+                "a": [1, 2, 3],
+            }
+        )
+
+    result = materialize(
+        [overwrite_schema_asset],
+    )
+
+    handled_output_events = list(
+        filter(lambda evt: evt.is_handled_output, result.events_for_node("overwrite_schema_asset"))
+    )
+    saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore[index,union-attr]
+    assert isinstance(saved_path, str)
+
+    @asset(io_manager_def=polars_delta_io_manager, metadata={"overwrite_schema": True, "mode": "overwrite"})
+    def overwrite_schema_asset() -> pl.DataFrame:
+        return pl.DataFrame(
+            {
+                "b": ["1", "2", "3"],
+            }
+        )
+
+    materialize(
+        [overwrite_schema_asset],
+    )
+
+    pl_testing.assert_frame_equal(
+        pl.DataFrame(
+            {
+                "b": ["1", "2", "3"],
+            }
+        ),
+        pl.read_delta(saved_path),
+    )
