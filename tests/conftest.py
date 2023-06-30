@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime, timedelta
 from typing import Tuple, Type
 
@@ -9,6 +10,8 @@ from dagster import DagsterInstance
 
 from dagster_polars import BasePolarsUPathIOManager, PolarsDeltaIOManager, PolarsParquetIOManager
 
+logging.getLogger("alembic.runtime.migration").setLevel(logging.WARNING)
+
 
 @pytest.fixture
 def dagster_instance(tmp_path_factory: TempPathFactory) -> DagsterInstance:
@@ -16,18 +19,20 @@ def dagster_instance(tmp_path_factory: TempPathFactory) -> DagsterInstance:
 
 
 @pytest.fixture(scope="session")
-def session_dagster_instance(tmp_path_factory: TempPathFactory) -> DagsterInstance:
-    return DagsterInstance.ephemeral(tempdir=str(tmp_path_factory.mktemp("dagster_home")))
+def session_scoped_dagster_instance(tmp_path_factory: TempPathFactory) -> DagsterInstance:
+    return DagsterInstance.ephemeral(tempdir=str(tmp_path_factory.mktemp("dagster_home_session")))
 
 
 @pytest.fixture(scope="session")
-def session_polars_parquet_io_manager(session_dagster_instance: DagsterInstance) -> PolarsParquetIOManager:
-    return PolarsParquetIOManager(base_dir=session_dagster_instance.storage_directory())  # to use with hypothesis
+def session_polars_parquet_io_manager(session_scoped_dagster_instance: DagsterInstance) -> PolarsParquetIOManager:
+    return PolarsParquetIOManager(
+        base_dir=session_scoped_dagster_instance.storage_directory()
+    )  # to use with hypothesis
 
 
 @pytest.fixture(scope="session")
-def session_polars_delta_io_manager(session_dagster_instance: DagsterInstance) -> PolarsDeltaIOManager:
-    return PolarsDeltaIOManager(base_dir=session_dagster_instance.storage_directory())  # to use with hypothesis
+def session_polars_delta_io_manager(session_scoped_dagster_instance: DagsterInstance) -> PolarsDeltaIOManager:
+    return PolarsDeltaIOManager(base_dir=session_scoped_dagster_instance.storage_directory())  # to use with hypothesis
 
 
 df_for_parquet = pl.DataFrame(
@@ -63,7 +68,7 @@ df_for_delta = pl.DataFrame(
 @pytest_cases.parametrize(
     "class_and_df", [(PolarsParquetIOManager, df_for_parquet), (PolarsDeltaIOManager, df_for_delta)]
 )
-def manager_and_df(  # to use without hypothesis
+def io_manager_and_df(  # to use without hypothesis
     class_and_df: Tuple[Type[BasePolarsUPathIOManager], pl.DataFrame], dagster_instance: DagsterInstance
 ) -> Tuple[BasePolarsUPathIOManager, pl.DataFrame]:
     klass, df = class_and_df
