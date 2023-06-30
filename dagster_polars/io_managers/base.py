@@ -11,6 +11,7 @@ from dagster import (
     InitResourceContext,
     InputContext,
     MetadataValue,
+    MultiPartitionKey,
     OutputContext,
     TableColumn,
     TableMetadataValue,
@@ -189,3 +190,39 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             pass
 
         return storage_options
+
+    def get_path_for_partition(self, context: Union[InputContext, OutputContext], path: UPath, partition: str) -> UPath:
+        """
+        Override this method if you want to use a different partitioning scheme
+        (for example, if the saving function handles partitioning instead).
+        The extension will be added later.
+        :param context:
+        :param path: asset path before partitioning
+        :param partition: formatted partition key
+        :return:
+        """
+        return path / partition
+
+    def _get_paths_for_partitions(self, context: Union[InputContext, OutputContext]) -> Dict[str, "UPath"]:
+        """Returns a dict of partition_keys into I/O paths for a given context."""
+        if not context.has_asset_partitions:
+            raise TypeError(
+                f"Detected {context.dagster_type.typing_type} input type " "but the asset is not partitioned"
+            )
+
+        def _formatted_multipartitioned_path(partition_key: MultiPartitionKey) -> str:
+            ordered_dimension_keys = [
+                key[1] for key in sorted(partition_key.keys_by_dimension.items(), key=lambda x: x[0])
+            ]
+            return "/".join(ordered_dimension_keys)
+
+        formatted_partition_keys = [
+            _formatted_multipartitioned_path(pk) if isinstance(pk, MultiPartitionKey) else pk
+            for pk in context.asset_partition_keys
+        ]
+
+        asset_path = self._get_path_without_extension(context)
+        return {
+            partition: self._with_extension(self.get_path_for_partition(context, asset_path, partition))
+            for partition in formatted_partition_keys
+        }

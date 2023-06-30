@@ -45,7 +45,7 @@ def session_polars_delta_io_manager(session_scoped_dagster_instance: DagsterInst
     return PolarsDeltaIOManager(base_dir=session_scoped_dagster_instance.storage_directory())  # to use with hypothesis
 
 
-df_for_parquet = pl.DataFrame(
+_df_for_parquet = pl.DataFrame(
     {
         "1": [0, 1, None],
         "2": [0.0, 1.0, None],
@@ -59,9 +59,19 @@ df_for_parquet = pl.DataFrame(
 )
 
 
+@pytest_cases.fixture(scope="session")
+def df_for_parquet() -> pl.DataFrame:
+    return _df_for_parquet
+
+
+@pytest_cases.fixture(scope="session")
+def df_for_delta() -> pl.DataFrame:
+    return _df_for_delta
+
+
 # delta doesn't support Duration
 # TODO: add timedeltas when supported
-df_for_delta = pl.DataFrame(
+_df_for_delta = pl.DataFrame(
     {
         "1": [0, 1, None],
         "2": [0.0, 1.0, None],
@@ -76,7 +86,7 @@ df_for_delta = pl.DataFrame(
 
 @pytest_cases.fixture
 @pytest_cases.parametrize(
-    "class_and_df", [(PolarsParquetIOManager, df_for_parquet), (PolarsDeltaIOManager, df_for_delta)]
+    "class_and_df", [(PolarsParquetIOManager, _df_for_parquet), (PolarsDeltaIOManager, _df_for_delta)]
 )
 def io_manager_and_df(  # to use without hypothesis
     class_and_df: Tuple[Type[BasePolarsUPathIOManager], pl.DataFrame], dagster_instance: DagsterInstance

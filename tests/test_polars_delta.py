@@ -1,8 +1,10 @@
 import shutil
+from typing import Dict
 
 import polars as pl
 import polars.testing as pl_testing
-from dagster import asset, materialize
+from dagster import OpExecutionContext, StaticPartitionsDefinition, asset, materialize
+from deltalake import DeltaTable
 from hypothesis import given, settings
 from polars.testing.parametric import dataframes
 
@@ -117,4 +119,42 @@ def test_polars_delta_io_manager_overwrite_schema(polars_delta_io_manager: Polar
             }
         ),
         pl.read_delta(saved_path),
+    )
+
+
+def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame):
+    manager = polars_delta_io_manager
+    df = df_for_delta
+
+    partitions_def = StaticPartitionsDefinition(["a", "b"])
+
+    @asset(io_manager_def=manager, partitions_def=partitions_def, metadata={"partition_by": "partition"})
+    def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
+        return df.with_columns(pl.lit(context.partition_key).alias("partition"))
+
+    @asset(io_manager_def=manager)
+    def downstream_load_multiple_partitions(upstream_partitioned: Dict[str, pl.LazyFrame]) -> None:
+        for _df in upstream_partitioned.values():
+            assert isinstance(_df, pl.LazyFrame), type(_df)
+        assert set(upstream_partitioned.keys()) == {"a", "b"}, upstream_partitioned.keys()
+
+    for partition_key in ["a", "b"]:
+        result = materialize(
+            [upstream_partitioned],
+            partition_key=partition_key,
+        )
+
+        handled_output_events = list(
+            filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream_partitioned"))
+        )
+        saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore
+        assert isinstance(saved_path, str)
+        assert saved_path.endswith("upstream_partitioned.delta"), saved_path  # DeltaLake should handle partitioning!
+        assert DeltaTable(saved_path).metadata().partition_columns == ["partition"]
+
+    materialize(
+        [
+            upstream_partitioned.to_source_asset(),
+            downstream_load_multiple_partitions,
+        ],
     )
