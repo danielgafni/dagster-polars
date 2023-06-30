@@ -38,7 +38,7 @@ jobs:
       - name: Install dependencies
         run: poetry install --all-extras --sync && pip install --ignore-installed polars~=${{ matrix.polars_version }}
       - name: Print polars info
-        run: python -c 'import polars; print(polars.pl.show_versions())'
+        run: python -c 'import polars; print(polars.show_versions())'
       - name: Run tests
         run: pytest -v .
 
