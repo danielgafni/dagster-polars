@@ -1,4 +1,5 @@
 import shutil
+from time import sleep
 
 import polars as pl
 import polars.testing as pl_testing
@@ -35,3 +36,4 @@ def test_polars_delta_io(df: pl.DataFrame, tmp_path_factory: TempPathFactory):
     df.write_delta(str(tmp_path))
     pl_testing.assert_frame_equal(df, pl.read_delta(str(tmp_path)))
     shutil.rmtree(str(tmp_path))  # cleanup manually because of hypothesis
+    sleep(0.05)  # don't remove this

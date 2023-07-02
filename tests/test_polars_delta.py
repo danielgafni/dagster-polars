@@ -1,4 +1,5 @@
 import shutil
+from time import sleep
 from typing import Dict
 
 import polars as pl
@@ -53,6 +54,7 @@ def test_polars_delta_io_manager(session_polars_delta_io_manager: PolarsDeltaIOM
     assert isinstance(saved_path, str)
     pl_testing.assert_frame_equal(df, pl.read_delta(saved_path))
     shutil.rmtree(saved_path)  # cleanup manually because of hypothesis
+    sleep(0.05)  # don't remove this
 
 
 def test_polars_delta_io_manager_append(polars_delta_io_manager: PolarsDeltaIOManager):
