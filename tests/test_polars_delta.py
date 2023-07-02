@@ -11,24 +11,18 @@ from polars.testing.parametric import dataframes
 
 from dagster_polars import PolarsDeltaIOManager
 
-# TODO: remove pl.Time once it's supported
-# TODO: remove pl.Duration pl.Duration once it's supported
-# https://github.com/pola-rs/polars/issues/9631
-# TODO: remove UInt types once they are fixed:
-#  https://github.com/pola-rs/polars/issues/9627
-
 
 @given(
     df=dataframes(
         excluded_dtypes=[
-            pl.Categorical,
-            pl.Duration,
-            pl.Time,
-            pl.UInt8,
-            pl.UInt16,
-            pl.UInt32,
-            pl.UInt64,
-            pl.Datetime("ns", None),
+            pl.Categorical,  # not supported
+            pl.Duration,  # not supported
+            pl.Time,  # not supported
+            pl.UInt8,  # gets automatically casted to Int8
+            pl.UInt16,  # gets automatically casted to Int16
+            pl.UInt32,  # gets automatically casted to Int32
+            pl.UInt64,  # gets automatically casted to Int64
+            pl.Datetime("ns", None),  # casting not implemented
         ],
         min_size=5,
         allow_infinities=False,
@@ -54,7 +48,7 @@ def test_polars_delta_io_manager(session_polars_delta_io_manager: PolarsDeltaIOM
     assert isinstance(saved_path, str)
     pl_testing.assert_frame_equal(df, pl.read_delta(saved_path))
     shutil.rmtree(saved_path)  # cleanup manually because of hypothesis
-    sleep(0.05)  # don't remove this
+    sleep(0.1)  # don't remove this
 
 
 def test_polars_delta_io_manager_append(polars_delta_io_manager: PolarsDeltaIOManager):
