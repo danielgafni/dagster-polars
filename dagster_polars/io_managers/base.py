@@ -1,9 +1,6 @@
-import json
 import sys
 from abc import abstractmethod
-from datetime import date, datetime, time, timedelta
-from pprint import pformat
-from typing import Any, Dict, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, Mapping, Optional, Union
 
 import polars as pl
 from dagster import (
@@ -13,10 +10,6 @@ from dagster import (
     MetadataValue,
     MultiPartitionKey,
     OutputContext,
-    TableColumn,
-    TableMetadataValue,
-    TableRecord,
-    TableSchema,
     UPathIOManager,
 )
 from dagster import _check as check
@@ -44,86 +37,6 @@ POLARS_LAZY_FRAME_ANNOTATIONS = [
 if sys.version >= "3.9":
     POLARS_DATA_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
     POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
-
-
-def cast_polars_single_value_to_dagster_table_types(val: Any):
-    if val is None:
-        return ""
-    elif isinstance(val, (date, datetime, time, timedelta)):
-        return str(val)
-    elif isinstance(val, (list, dict)):
-        # default=str because sometimes the object can be a list of datetimes or something like this
-        return json.dumps(val, default=str)
-    else:
-        return val
-
-
-def get_metadata_schema(
-    df: pl.DataFrame,
-    descriptions: Optional[Dict[str, str]] = None,
-):
-    descriptions = descriptions or {}
-    return TableSchema(
-        columns=[
-            TableColumn(name=col, type=str(pl_type), description=descriptions.get(col))
-            for col, pl_type in df.schema.items()
-        ]
-    )
-
-
-def get_metadata_table_and_schema(
-    context: OutputContext,
-    df: pl.DataFrame,
-    n_rows: Optional[int] = 5,
-    fraction: Optional[float] = None,
-    descriptions: Optional[Dict[str, str]] = None,
-) -> Tuple[TableSchema, Optional[TableMetadataValue]]:
-    assert not fraction and n_rows, "only one of n_rows and frac should be set"
-    n_rows = min(n_rows, len(df))
-
-    schema = get_metadata_schema(df, descriptions=descriptions)
-
-    df_sample = df.sample(n=n_rows, fraction=fraction, shuffle=True)
-
-    try:
-        # this can fail sometimes
-        # because TableRecord doesn't support all python types
-        table = MetadataValue.table(
-            records=[
-                TableRecord(
-                    {
-                        col: cast_polars_single_value_to_dagster_table_types(  # type: ignore
-                            df_sample.to_dicts()[i][col]
-                        )
-                        for col in df.columns
-                    }
-                )
-                for i in range(len(df_sample))
-            ],
-            schema=schema,
-        )
-
-    except TypeError as e:
-        context.log.error(
-            f"Failed to create table sample metadata. Will only record table schema metadata. "
-            f"Reason:\n{e}\n"
-            f"Schema:\n{df.schema}\n"
-            f"Polars sample:\n{df_sample}\n"
-            f"dict sample:\n{pformat(df_sample.to_dicts())}"
-        )
-        return schema, None
-
-    return schema, table
-
-
-def get_polars_df_stats(
-    df: pl.DataFrame,
-) -> Dict[str, Dict[str, Union[str, int, float]]]:
-    describe = df.describe().fill_null(pl.lit("null"))
-    return {
-        col: {stat: describe[col][i] for i, stat in enumerate(describe["describe"].to_list())}
-        for col in describe.columns[1:]
-    }
 
 
 class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
