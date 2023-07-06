@@ -28,29 +28,52 @@ pip install 'dagster-polars[gcp]'
 ```
 
 
-### Usage
+### Usage & Examples
 ```python
 import polars as pl
-from dagster import asset, Definitions
-from dagster_polars import PolarsParquetIOManager
+from dagster import AssetIn, Definitions, asset
+from dagster_polars import PolarsDeltaIOManager, PolarsParquetIOManager
 
 
 @asset(io_manager_key="polars_parquet_io_manager")
 def upstream() -> pl.DataFrame:
-    df: pl.DataFrame = ...
-    return df
+    return pl.DataFrame({"a": [1, 2, 3], "b": ["a", "b", "c"]})
 
 
-@asset(io_manager_key="polars_parquet_io_manager")
-def downstream(upstream: pl.LazyFrame) -> pl.DataFrame:
+@asset(
+    io_manager_key="polars_parquet_io_manager",
+    ins={"upstream": AssetIn(metadata={"columns": ["a"]})}  # explicitly specify which columns to load
+)
+def downstream(
+    upstream: pl.LazyFrame  # the type annotation controls whether we load an eager or lazy DataFrame
+) -> pl.DataFrame:
     df = ...  # some lazy operations with `upstream`
     return df.collect()
 
 
+@asset(
+    io_manager_key="polars_delta_io_manager",
+    metadata={
+        "mode": "append"  # append to the existing table instead of overwriting it
+    }
+)
+def downstream_append(
+    upstream: pl.DataFrame
+) -> pl.DataFrame:
+    return upstream
+
+
+base_dir = "/remote/or/local/path"  # s3://my-bucket/... or gs://my-bucket/... also works!
+
 definitions = Definitions(
-    assets=[upstream, downstream],
+    assets=[upstream, downstream, downstream_append],
     resources={
-        "polars_parquet_io_manager": PolarsParquetIOManager(base_dir="/remote/or/local/path")
+        "polars_parquet_io_manager": PolarsParquetIOManager(
+            base_dir=base_dir
+        ),
+        "polars_delta_io_manager": PolarsDeltaIOManager(
+            base_dir=base_dir
+        ),
     }
 )
 ```
