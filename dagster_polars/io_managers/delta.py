@@ -98,7 +98,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
             if not context.has_asset_partitions:
                 # we need to get num_rows from the full table
-                metadata["num_rows"] = MetadataValue.int(
+                metadata["row_count"] = MetadataValue.int(
                     DeltaTable(str(path), storage_options=self.get_storage_options(path))
                     .to_pyarrow_dataset()
                     .count_rows()
