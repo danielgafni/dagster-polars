@@ -1,5 +1,6 @@
+from enum import Enum
 from pprint import pformat
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Optional, Union
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
@@ -9,9 +10,16 @@ from upath import UPath
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 
 
+class DeltaWriteMode(str, Enum):
+    error = "error"
+    append = "append"
+    overwrite = "overwrite"
+    ignore = "ignore"
+
+
 class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     extension: str = ".delta"
-    mode: Literal["error", "append", "overwrite", "ignore"] = "overwrite"
+    mode: DeltaWriteMode = DeltaWriteMode.overwrite
     overwrite_schema: bool = False
     version: Optional[int] = None
 
