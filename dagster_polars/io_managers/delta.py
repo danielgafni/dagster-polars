@@ -19,7 +19,7 @@ class DeltaWriteMode(str, Enum):
 
 class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     extension: str = ".delta"
-    mode: DeltaWriteMode = DeltaWriteMode.overwrite
+    mode: DeltaWriteMode = DeltaWriteMode.overwrite.value  # type: ignore
     overwrite_schema: bool = False
     version: Optional[int] = None
 
