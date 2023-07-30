@@ -3,17 +3,19 @@ from typing import Dict
 
 import polars as pl
 import polars.testing as pl_testing
-from dagster import OpExecutionContext, StaticPartitionsDefinition, asset, materialize
+from dagster import DagsterInstance, OpExecutionContext, StaticPartitionsDefinition, asset, materialize
 from deltalake import DeltaTable
 from hypothesis import given, settings
 from polars.testing.parametric import dataframes
 
 from dagster_polars import PolarsDeltaIOManager
+from dagster_polars.io_managers.delta import DeltaWriteMode
+from tests.utils import get_saved_path
 
 # TODO: remove pl.Time once it's supported
 # TODO: remove pl.Duration pl.Duration once it's supported
 # https://github.com/pola-rs/polars/issues/9631
-# TODO: remove UInt types once they are fixed:
+# TODO: remove UInt types once they are supported
 #  https://github.com/pola-rs/polars/issues/9627
 
 
@@ -86,9 +88,11 @@ def test_polars_delta_io_manager_append(polars_delta_io_manager: PolarsDeltaIOMa
     pl_testing.assert_frame_equal(pl.concat([df, df]), pl.read_delta(saved_path))
 
 
-def test_polars_delta_io_manager_overwrite_schema(polars_delta_io_manager: PolarsDeltaIOManager):
+def test_polars_delta_io_manager_overwrite_schema(
+    polars_delta_io_manager: PolarsDeltaIOManager, dagster_instance: DagsterInstance
+):
     @asset(io_manager_def=polars_delta_io_manager)
-    def overwrite_schema_asset() -> pl.DataFrame:  # type: ignore
+    def overwrite_schema_asset_1() -> pl.DataFrame:  # type: ignore
         return pl.DataFrame(
             {
                 "a": [1, 2, 3],
@@ -96,31 +100,66 @@ def test_polars_delta_io_manager_overwrite_schema(polars_delta_io_manager: Polar
         )
 
     result = materialize(
-        [overwrite_schema_asset],
+        [overwrite_schema_asset_1],
     )
 
-    handled_output_events = list(
-        filter(lambda evt: evt.is_handled_output, result.events_for_node("overwrite_schema_asset"))
+    saved_path = get_saved_path(result, "overwrite_schema_asset_1")
+
+    pl_testing.assert_frame_equal(
+        pl.DataFrame(
+            {
+                "a": [1, 2, 3],
+            }
+        ),
+        pl.read_delta(saved_path),
     )
-    saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore[index,union-attr]
-    assert isinstance(saved_path, str)
 
     @asset(io_manager_def=polars_delta_io_manager, metadata={"overwrite_schema": True, "mode": "overwrite"})
-    def overwrite_schema_asset() -> pl.DataFrame:
+    def overwrite_schema_asset_2() -> pl.DataFrame:
         return pl.DataFrame(
             {
                 "b": ["1", "2", "3"],
             }
         )
 
-    materialize(
-        [overwrite_schema_asset],
+    result = materialize(
+        [overwrite_schema_asset_2],
     )
+
+    saved_path = get_saved_path(result, "overwrite_schema_asset_2")
 
     pl_testing.assert_frame_equal(
         pl.DataFrame(
             {
                 "b": ["1", "2", "3"],
+            }
+        ),
+        pl.read_delta(saved_path),
+    )
+
+    # test IOManager configuration works too
+    @asset(
+        io_manager_def=PolarsDeltaIOManager(
+            base_dir=dagster_instance.storage_directory(), mode=DeltaWriteMode.overwrite, overwrite_schema=True
+        )
+    )
+    def overwrite_schema_asset_3() -> pl.DataFrame:  # type: ignore
+        return pl.DataFrame(
+            {
+                "a": [1, 2, 3],
+            }
+        )
+
+    result = materialize(
+        [overwrite_schema_asset_3],
+    )
+
+    saved_path = get_saved_path(result, "overwrite_schema_asset_3")
+
+    pl_testing.assert_frame_equal(
+        pl.DataFrame(
+            {
+                "a": [1, 2, 3],
             }
         ),
         pl.read_delta(saved_path),
@@ -149,11 +188,7 @@ def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIO
             partition_key=partition_key,
         )
 
-        handled_output_events = list(
-            filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream_partitioned"))
-        )
-        saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore
-        assert isinstance(saved_path, str)
+        saved_path = get_saved_path(result, "upstream_partitioned")
         assert saved_path.endswith("upstream_partitioned.delta"), saved_path  # DeltaLake should handle partitioning!
         assert DeltaTable(saved_path).metadata().partition_columns == ["partition"]
 

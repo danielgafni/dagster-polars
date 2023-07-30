@@ -1,5 +1,6 @@
+from enum import Enum
 from pprint import pformat
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
@@ -9,14 +10,25 @@ from upath import UPath
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 
 
+class DeltaWriteMode(str, Enum):
+    error = "error"
+    append = "append"
+    overwrite = "overwrite"
+    ignore = "ignore"
+
+
 class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     extension: str = ".delta"
+    mode: DeltaWriteMode = DeltaWriteMode.overwrite.value  # type: ignore
+    overwrite_schema: bool = False
+    version: Optional[int] = None
 
     assert BasePolarsUPathIOManager.__doc__ is not None
     __doc__ = (
         BasePolarsUPathIOManager.__doc__
         + """\nWorks with Delta files.
-    All read/write arguments can be passed via corresponding metadata values."""
+    All read/write arguments can be passed via corresponding metadata values.
+    Metadata values take precedence over config parameters."""  # TODO: should this be opposite?
     )
 
     def dump_df_to_path(self, context: OutputContext, df: pl.DataFrame, path: UPath):
@@ -38,8 +50,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         df.write_delta(
             str(path),
-            mode=context.metadata.get("mode", "overwrite"),  # type: ignore
-            overwrite_schema=context.metadata.get("overwrite_schema", False),
+            mode=context.metadata.get("mode", self.mode),  # type: ignore
+            overwrite_schema=context.metadata.get("overwrite_schema", self.overwrite_schema),
             storage_options=storage_options,
             delta_write_options=delta_write_options,
         )
@@ -51,7 +63,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         return pl.scan_delta(
             str(path),
-            version=context.metadata.get("version"),
+            version=context.metadata.get("version") or self.version or None,
             delta_table_options=context.metadata.get("delta_table_options"),
             pyarrow_options=context.metadata.get("pyarrow_options"),
             storage_options=self.get_storage_options(path),
