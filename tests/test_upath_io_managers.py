@@ -6,6 +6,7 @@ from dagster import OpExecutionContext, StaticPartitionsDefinition, asset, mater
 from deepdiff import DeepDiff
 
 from dagster_polars import BasePolarsUPathIOManager, PolarsDeltaIOManager, PolarsParquetIOManager
+from tests.utils import get_saved_path
 
 
 def test_polars_upath_io_manager_stats_metadata(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
@@ -128,10 +129,7 @@ def test_polars_upath_io_manager_nested_dtypes(io_manager_and_df: Tuple[BasePola
         [upstream, downstream],
     )
 
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream")))
-
-    saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore[index,union-attr]
-    assert isinstance(saved_path, str)
+    saved_path = get_saved_path(result, "upstream")
 
     if isinstance(manager, PolarsParquetIOManager):
         pl_testing.assert_frame_equal(df, pl.read_parquet(saved_path))
