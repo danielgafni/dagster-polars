@@ -27,7 +27,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     __doc__ = (
         BasePolarsUPathIOManager.__doc__
         + """\nWorks with Delta files.
-    All read/write arguments can be passed via corresponding metadata values."""
+    All read/write arguments can be passed via corresponding metadata values.
+    Metadata values take precedence over config parameters."""  # TODO: should this be opposite?
     )
 
     def dump_df_to_path(self, context: OutputContext, df: pl.DataFrame, path: UPath):
