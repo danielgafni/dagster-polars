@@ -1,8 +1,8 @@
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 import polars as pl
 import polars.testing as pl_testing
-from dagster import OpExecutionContext, StaticPartitionsDefinition, asset, materialize
+from dagster import AssetExecutionContext, OpExecutionContext, StaticPartitionsDefinition, asset, materialize
 from deepdiff import DeepDiff
 
 from dagster_polars import BasePolarsUPathIOManager, PolarsDeltaIOManager, PolarsParquetIOManager
@@ -137,3 +137,89 @@ def test_polars_upath_io_manager_nested_dtypes(io_manager_and_df: Tuple[BasePola
         pl_testing.assert_frame_equal(df, pl.read_delta(saved_path))
     else:
         raise ValueError(f"Test not implemented for {type(manager)}")
+
+
+def test_polars_upath_io_manager_optional_eager(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+    manager, df = io_manager_and_df
+
+    @asset(io_manager_def=manager)
+    def upstream() -> pl.DataFrame:
+        return df
+
+    @asset(io_manager_def=manager)
+    def downstream(upstream: Optional[pl.DataFrame]) -> pl.DataFrame:
+        assert upstream is not None
+        return upstream
+
+    materialize(
+        [upstream, downstream],
+    )
+
+
+def test_polars_upath_io_manager_optional_lazy(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+    manager, df = io_manager_and_df
+
+    @asset(io_manager_def=manager)
+    def upstream() -> pl.DataFrame:
+        return df
+
+    @asset(io_manager_def=manager)
+    def downstream(upstream: Optional[pl.LazyFrame]) -> pl.DataFrame:
+        assert upstream is not None
+        return upstream.collect()
+
+    materialize(
+        [upstream, downstream],
+    )
+
+
+def test_polars_upath_io_manager_optional_dict_eager(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+    manager, df = io_manager_and_df
+
+    @asset(io_manager_def=manager, partitions_def=StaticPartitionsDefinition(["a", "b"]))
+    def upstream(context: AssetExecutionContext) -> pl.DataFrame:
+        return df.with_columns(pl.lit(context.partition_key).alias("partition"))
+
+    @asset(io_manager_def=manager)
+    def downstream(upstream: Dict[str, Optional[pl.DataFrame]]) -> pl.DataFrame:
+        dfs = []
+        for partition, df in upstream.items():
+            assert df is not None
+            dfs.append(df)
+        return pl.concat(dfs)
+
+    for partition_key in ["a", "b"]:
+        materialize(
+            [upstream],
+            partition_key=partition_key,
+        )
+
+    materialize(
+        [upstream.to_source_asset(), downstream],
+    )
+
+
+def test_polars_upath_io_manager_optional_dict_lazy(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+    manager, df = io_manager_and_df
+
+    @asset(io_manager_def=manager, partitions_def=StaticPartitionsDefinition(["a", "b"]))
+    def upstream(context: AssetExecutionContext) -> pl.DataFrame:
+        return df.with_columns(pl.lit(context.partition_key).alias("partition"))
+
+    @asset(io_manager_def=manager)
+    def downstream(upstream: Dict[str, Optional[pl.LazyFrame]]) -> pl.DataFrame:
+        dfs = []
+        for partition, df in upstream.items():
+            assert df is not None
+            dfs.append(df)
+        return pl.concat(dfs).collect()
+
+    for partition_key in ["a", "b"]:
+        materialize(
+            [upstream],
+            partition_key=partition_key,
+        )
+
+    materialize(
+        [upstream.to_source_asset(), downstream],
+    )
