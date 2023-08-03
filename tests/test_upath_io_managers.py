@@ -223,3 +223,21 @@ def test_polars_upath_io_manager_optional_dict_lazy(io_manager_and_df: Tuple[Bas
     materialize(
         [upstream.to_source_asset(), downstream],
     )
+
+
+def test_polars_upath_io_manager_optional_eager_return_none(
+    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]
+):
+    manager, df = io_manager_and_df
+
+    @asset(io_manager_def=manager)
+    def upstream() -> pl.DataFrame:
+        return df
+
+    @asset
+    def downstream(upstream: Optional[pl.DataFrame]):
+        assert upstream is None
+
+    materialize(
+        [upstream.to_source_asset(), downstream],
+    )
