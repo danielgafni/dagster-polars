@@ -1,6 +1,6 @@
 import sys
 from abc import abstractmethod
-from typing import Any, Dict, Mapping, Optional, Union
+from typing import Any, Dict, Mapping, Optional, Union, get_args, get_origin
 
 import polars as pl
 from dagster import (
@@ -47,6 +47,10 @@ if sys.version >= "3.9":
     POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.LazyFrame]])  # type: ignore
 
 
+def annotation_is_typing_optional(annotation):
+    return get_origin(annotation) == Union and type(None) in get_args(annotation)
+
+
 class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     # This is a base class which doesn't define the specific format (parquet, csv, etc) to use
     """
@@ -81,7 +85,11 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     def dump_to_path(self, context: OutputContext, obj: pl.DataFrame, path: UPath):
         self.dump_df_to_path(context=context, df=obj, path=path)
 
-    def load_from_path(self, path: UPath, context: InputContext) -> Union[pl.DataFrame, pl.LazyFrame]:
+    def load_from_path(self, path: UPath, context: InputContext) -> Union[pl.DataFrame, pl.LazyFrame, None]:
+        if annotation_is_typing_optional(context.dagster_type.typing_type) and not path.exists():
+            context.log.warning(self.get_missing_optional_input_log_message(context, path))
+            return None
+
         assert context.metadata is not None
 
         ldf = self.scan_df_from_path(path=path, context=context)
@@ -147,3 +155,6 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             partition: self._with_extension(self.get_path_for_partition(context, asset_path, partition))
             for partition in formatted_partition_keys
         }
+
+    def get_missing_optional_input_log_message(self, context: InputContext, path: UPath) -> str:
+        return f"Optional input {context.name} at {path} doesn't exist in the filesystem and won't be loaded!"

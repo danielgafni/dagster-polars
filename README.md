@@ -2,11 +2,14 @@
 
 [Polars](https://github.com/pola-rs/polars) integration library for [Dagster](https://github.com/dagster-io/dagster).
 
+All IOManagers log various metadata about the DataFrame - size, schema, sample, stats.
+
+For all IOManagers the `columns` input metadata can be used to select a subset of columns to load.
+
 ## Features
- - All IOManagers log various metadata about the DataFrame - size, schema, sample, stats, ...
- - For all IOManagers the `"columns"` input metadata key can be used to select a subset of columns to load
  - `BasePolarsUPathIOManager` is a base class for IO managers that work with Polars DataFrames. Shouldn't be used directly unless you want to implement your own `IOManager`.
    - returns the correct type (`polars.DataFrame` or `polars.LazyFrame`) based on the type annotation
+   - doesn't raise an error on missing data if `Optional[...]` type annotation is used
    - inherits all the features of the `UPathIOManager` - works with local and remote filesystems (like S3),
        supports loading multiple partitions (use `dict[str, pl.DataFrame]` type annotation), ...
    - Implemented serialization formats:
