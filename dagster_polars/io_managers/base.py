@@ -18,25 +18,33 @@ from upath import UPath
 
 from dagster_polars.io_managers.utils import get_polars_metadata
 
-POLARS_DATA_FRAME_ANNOTATIONS = [
+POLARS_EAGER_FRAME_ANNOTATIONS = [
     Any,
     pl.DataFrame,
+    Optional[pl.DataFrame],
     Dict[str, pl.DataFrame],
+    Dict[str, Optional[pl.DataFrame]],
     Mapping[str, pl.DataFrame],
+    Mapping[str, Optional[pl.DataFrame]],
     type(None),
     None,
 ]
 
 POLARS_LAZY_FRAME_ANNOTATIONS = [
     pl.LazyFrame,
+    Optional[pl.LazyFrame],
     Dict[str, pl.LazyFrame],
+    Dict[str, Optional[pl.LazyFrame]],
     Mapping[str, pl.LazyFrame],
+    Mapping[str, Optional[pl.LazyFrame]],
 ]
 
 
 if sys.version >= "3.9":
-    POLARS_DATA_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
-    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
+    POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
+    POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.DataFrame]])  # type: ignore
+    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.LazyFrame])  # type: ignore
+    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.LazyFrame]])  # type: ignore
 
 
 class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
@@ -83,7 +91,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             context.log.debug(f"Loading {columns=}")
             ldf = ldf.select(columns)
 
-        if context.dagster_type.typing_type in POLARS_DATA_FRAME_ANNOTATIONS:
+        if context.dagster_type.typing_type in POLARS_EAGER_FRAME_ANNOTATIONS:
             return ldf.collect(streaming=True)
         elif context.dagster_type.typing_type in POLARS_LAZY_FRAME_ANNOTATIONS:
             return ldf
