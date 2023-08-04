@@ -139,7 +139,7 @@ def test_polars_upath_io_manager_nested_dtypes(io_manager_and_df: Tuple[BasePola
         raise ValueError(f"Test not implemented for {type(manager)}")
 
 
-def test_polars_upath_io_manager_optional_eager(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+def test_polars_upath_io_manager_input_optional_eager(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
     manager, df = io_manager_and_df
 
     @asset(io_manager_def=manager)
@@ -156,7 +156,7 @@ def test_polars_upath_io_manager_optional_eager(io_manager_and_df: Tuple[BasePol
     )
 
 
-def test_polars_upath_io_manager_optional_lazy(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+def test_polars_upath_io_manager_input_optional_lazy(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
     manager, df = io_manager_and_df
 
     @asset(io_manager_def=manager)
@@ -173,7 +173,9 @@ def test_polars_upath_io_manager_optional_lazy(io_manager_and_df: Tuple[BasePola
     )
 
 
-def test_polars_upath_io_manager_optional_dict_eager(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+def test_polars_upath_io_manager_input_optional_dict_eager(
+    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]
+):
     manager, df = io_manager_and_df
 
     @asset(io_manager_def=manager, partitions_def=StaticPartitionsDefinition(["a", "b"]))
@@ -199,7 +201,9 @@ def test_polars_upath_io_manager_optional_dict_eager(io_manager_and_df: Tuple[Ba
     )
 
 
-def test_polars_upath_io_manager_optional_dict_lazy(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+def test_polars_upath_io_manager_input_optional_dict_lazy(
+    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]
+):
     manager, df = io_manager_and_df
 
     @asset(io_manager_def=manager, partitions_def=StaticPartitionsDefinition(["a", "b"]))
@@ -225,7 +229,7 @@ def test_polars_upath_io_manager_optional_dict_lazy(io_manager_and_df: Tuple[Bas
     )
 
 
-def test_polars_upath_io_manager_optional_eager_return_none(
+def test_polars_upath_io_manager_input_optional_eager_return_none(
     io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]
 ):
     manager, df = io_manager_and_df
@@ -240,4 +244,40 @@ def test_polars_upath_io_manager_optional_eager_return_none(
 
     materialize(
         [upstream.to_source_asset(), downstream],
+    )
+
+
+def test_polars_upath_io_manager_output_optional_eager(
+    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]
+):
+    manager, df = io_manager_and_df
+
+    @asset(io_manager_def=manager)
+    def upstream() -> Optional[pl.DataFrame]:
+        return None
+
+    @asset(io_manager_def=manager)
+    def downstream(upstream: Optional[pl.DataFrame]) -> Optional[pl.DataFrame]:
+        assert upstream is None
+        return upstream
+
+    materialize(
+        [upstream, downstream],
+    )
+
+
+def test_polars_upath_io_manager_output_optional_lazy(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+    manager, df = io_manager_and_df
+
+    @asset(io_manager_def=manager)
+    def upstream() -> Optional[pl.DataFrame]:
+        return None
+
+    @asset(io_manager_def=manager)
+    def downstream(upstream: Optional[pl.LazyFrame]) -> Optional[pl.DataFrame]:
+        assert upstream is None
+        return upstream
+
+    materialize(
+        [upstream, downstream],
     )

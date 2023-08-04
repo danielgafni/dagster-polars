@@ -57,6 +57,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     `IOManager` for `polars` based on the `UPathIOManager`.
     Features:
      - returns the correct type (`polars.DataFrame` or `polars.LazyFrame`) based on the type annotation
+     - handles `Optional` types by skipping loading missing inputs or `None` outputs
      - logs various metadata about the DataFrame - size, schema, sample, stats, ...
      - the "columns" input metadata value can be used to select a subset of columns
      - inherits all the features of the `UPathIOManager` - works with local and remote filesystems (like S3),
@@ -83,7 +84,11 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         ...
 
     def dump_to_path(self, context: OutputContext, obj: pl.DataFrame, path: UPath):
-        self.dump_df_to_path(context=context, df=obj, path=path)
+        if annotation_is_typing_optional(context.dagster_type.typing_type) and obj is None:
+            context.log.warning(self.get_optional_output_none_log_message(context, path))
+            return
+        else:
+            self.dump_df_to_path(context=context, df=obj, path=path)
 
     def load_from_path(self, path: UPath, context: InputContext) -> Union[pl.DataFrame, pl.LazyFrame, None]:
         if annotation_is_typing_optional(context.dagster_type.typing_type) and not path.exists():
@@ -107,7 +112,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             raise NotImplementedError(f"Can't load object for type annotation {context.dagster_type.typing_type}")
 
     def get_metadata(self, context: OutputContext, obj: pl.DataFrame) -> Dict[str, MetadataValue]:
-        return get_polars_metadata(context, obj)
+        return get_polars_metadata(context, obj) if obj is not None else {"missing": MetadataValue.bool(True)}
 
     @staticmethod
     def get_storage_options(path: UPath) -> dict:
@@ -158,3 +163,6 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
     def get_missing_optional_input_log_message(self, context: InputContext, path: UPath) -> str:
         return f"Optional input {context.name} at {path} doesn't exist in the filesystem and won't be loaded!"
+
+    def get_optional_output_none_log_message(self, context: OutputContext, path: UPath) -> str:
+        return f"The object for the optional output {context.name} is None, so it won't be saved to {path}!"
