@@ -9,7 +9,7 @@ For all IOManagers the `columns` input metadata can be used to select a subset o
 ## Features
  - `BasePolarsUPathIOManager` is a base class for IO managers that work with Polars DataFrames. Shouldn't be used directly unless you want to implement your own `IOManager`.
    - returns the correct type (`polars.DataFrame` or `polars.LazyFrame`) based on the type annotation
-   - doesn't raise an error on missing data if `Optional[...]` type annotation is used
+   - handles `Optional` types by skipping loading missing inputs or `None` outputs
    - inherits all the features of the `UPathIOManager` - works with local and remote filesystems (like S3),
        supports loading multiple partitions (use `dict[str, pl.DataFrame]` type annotation), ...
    - Implemented serialization formats:
