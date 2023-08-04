@@ -7,6 +7,7 @@ from hypothesis import given, settings
 from polars.testing.parametric import dataframes
 
 from dagster_polars import PolarsParquetIOManager
+from tests.utils import get_saved_path
 
 
 # allowed_dtypes=[pl.List(inner) for inner in
@@ -28,9 +29,6 @@ def test_polars_parquet_io_manager_read_write(
         [upstream, downstream],
     )
 
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream")))
-
-    saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore[index,union-attr]
-    assert isinstance(saved_path, str)
+    saved_path = get_saved_path(result, "upstream")
     pl_testing.assert_frame_equal(df, pl.read_parquet(saved_path))
     os.remove(saved_path)  # cleanup manually because of hypothesis

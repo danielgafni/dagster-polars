@@ -1,9 +1,6 @@
-import json
 import sys
 from abc import abstractmethod
-from datetime import date, datetime, time, timedelta
-from pprint import pformat
-from typing import Any, Dict, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, Mapping, Optional, Union, get_args, get_origin
 
 import polars as pl
 from dagster import (
@@ -13,10 +10,6 @@ from dagster import (
     MetadataValue,
     MultiPartitionKey,
     OutputContext,
-    TableColumn,
-    TableMetadataValue,
-    TableRecord,
-    TableSchema,
     UPathIOManager,
 )
 from dagster import _check as check
@@ -25,105 +18,37 @@ from upath import UPath
 
 from dagster_polars.io_managers.utils import get_polars_metadata
 
-POLARS_DATA_FRAME_ANNOTATIONS = [
+POLARS_EAGER_FRAME_ANNOTATIONS = [
     Any,
     pl.DataFrame,
+    Optional[pl.DataFrame],
     Dict[str, pl.DataFrame],
+    Dict[str, Optional[pl.DataFrame]],
     Mapping[str, pl.DataFrame],
+    Mapping[str, Optional[pl.DataFrame]],
     type(None),
     None,
 ]
 
 POLARS_LAZY_FRAME_ANNOTATIONS = [
     pl.LazyFrame,
+    Optional[pl.LazyFrame],
     Dict[str, pl.LazyFrame],
+    Dict[str, Optional[pl.LazyFrame]],
     Mapping[str, pl.LazyFrame],
+    Mapping[str, Optional[pl.LazyFrame]],
 ]
 
 
 if sys.version >= "3.9":
-    POLARS_DATA_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
-    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
+    POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
+    POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.DataFrame]])  # type: ignore
+    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.LazyFrame])  # type: ignore
+    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.LazyFrame]])  # type: ignore
 
 
-def cast_polars_single_value_to_dagster_table_types(val: Any):
-    if val is None:
-        return ""
-    elif isinstance(val, (date, datetime, time, timedelta)):
-        return str(val)
-    elif isinstance(val, (list, dict)):
-        # default=str because sometimes the object can be a list of datetimes or something like this
-        return json.dumps(val, default=str)
-    else:
-        return val
-
-
-def get_metadata_schema(
-    df: pl.DataFrame,
-    descriptions: Optional[Dict[str, str]] = None,
-):
-    descriptions = descriptions or {}
-    return TableSchema(
-        columns=[
-            TableColumn(name=col, type=str(pl_type), description=descriptions.get(col))
-            for col, pl_type in df.schema.items()
-        ]
-    )
-
-
-def get_metadata_table_and_schema(
-    context: OutputContext,
-    df: pl.DataFrame,
-    n_rows: Optional[int] = 5,
-    fraction: Optional[float] = None,
-    descriptions: Optional[Dict[str, str]] = None,
-) -> Tuple[TableSchema, Optional[TableMetadataValue]]:
-    assert not fraction and n_rows, "only one of n_rows and frac should be set"
-    n_rows = min(n_rows, len(df))
-
-    schema = get_metadata_schema(df, descriptions=descriptions)
-
-    df_sample = df.sample(n=n_rows, fraction=fraction, shuffle=True)
-
-    try:
-        # this can fail sometimes
-        # because TableRecord doesn't support all python types
-        table = MetadataValue.table(
-            records=[
-                TableRecord(
-                    {
-                        col: cast_polars_single_value_to_dagster_table_types(  # type: ignore
-                            df_sample.to_dicts()[i][col]
-                        )
-                        for col in df.columns
-                    }
-                )
-                for i in range(len(df_sample))
-            ],
-            schema=schema,
-        )
-
-    except TypeError as e:
-        context.log.error(
-            f"Failed to create table sample metadata. Will only record table schema metadata. "
-            f"Reason:\n{e}\n"
-            f"Schema:\n{df.schema}\n"
-            f"Polars sample:\n{df_sample}\n"
-            f"dict sample:\n{pformat(df_sample.to_dicts())}"
-        )
-        return schema, None
-
-    return schema, table
-
-
-def get_polars_df_stats(
-    df: pl.DataFrame,
-) -> Dict[str, Dict[str, Union[str, int, float]]]:
-    describe = df.describe().fill_null(pl.lit("null"))
-    return {
-        col: {stat: describe[col][i] for i, stat in enumerate(describe["describe"].to_list())}
-        for col in describe.columns[1:]
-    }
+def annotation_is_typing_optional(annotation):
+    return get_origin(annotation) == Union and type(None) in get_args(annotation)
 
 
 class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
@@ -132,6 +57,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     `IOManager` for `polars` based on the `UPathIOManager`.
     Features:
      - returns the correct type (`polars.DataFrame` or `polars.LazyFrame`) based on the type annotation
+     - handles `Optional` types by skipping loading missing inputs or `None` outputs
      - logs various metadata about the DataFrame - size, schema, sample, stats, ...
      - the "columns" input metadata value can be used to select a subset of columns
      - inherits all the features of the `UPathIOManager` - works with local and remote filesystems (like S3),
@@ -158,9 +84,17 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         ...
 
     def dump_to_path(self, context: OutputContext, obj: pl.DataFrame, path: UPath):
-        self.dump_df_to_path(context=context, df=obj, path=path)
+        if annotation_is_typing_optional(context.dagster_type.typing_type) and obj is None:
+            context.log.warning(self.get_optional_output_none_log_message(context, path))
+            return
+        else:
+            self.dump_df_to_path(context=context, df=obj, path=path)
 
-    def load_from_path(self, path: UPath, context: InputContext) -> Union[pl.DataFrame, pl.LazyFrame]:
+    def load_from_path(self, path: UPath, context: InputContext) -> Union[pl.DataFrame, pl.LazyFrame, None]:
+        if annotation_is_typing_optional(context.dagster_type.typing_type) and not path.exists():
+            context.log.warning(self.get_missing_optional_input_log_message(context, path))
+            return None
+
         assert context.metadata is not None
 
         ldf = self.scan_df_from_path(path=path, context=context)
@@ -170,7 +104,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             context.log.debug(f"Loading {columns=}")
             ldf = ldf.select(columns)
 
-        if context.dagster_type.typing_type in POLARS_DATA_FRAME_ANNOTATIONS:
+        if context.dagster_type.typing_type in POLARS_EAGER_FRAME_ANNOTATIONS:
             return ldf.collect(streaming=True)
         elif context.dagster_type.typing_type in POLARS_LAZY_FRAME_ANNOTATIONS:
             return ldf
@@ -178,7 +112,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             raise NotImplementedError(f"Can't load object for type annotation {context.dagster_type.typing_type}")
 
     def get_metadata(self, context: OutputContext, obj: pl.DataFrame) -> Dict[str, MetadataValue]:
-        return get_polars_metadata(context, obj)
+        return get_polars_metadata(context, obj) if obj is not None else {"missing": MetadataValue.bool(True)}
 
     @staticmethod
     def get_storage_options(path: UPath) -> dict:
@@ -226,3 +160,9 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             partition: self._with_extension(self.get_path_for_partition(context, asset_path, partition))
             for partition in formatted_partition_keys
         }
+
+    def get_missing_optional_input_log_message(self, context: InputContext, path: UPath) -> str:
+        return f"Optional input {context.name} at {path} doesn't exist in the filesystem and won't be loaded!"
+
+    def get_optional_output_none_log_message(self, context: OutputContext, path: UPath) -> str:
+        return f"The object for the optional output {context.name} is None, so it won't be saved to {path}!"
