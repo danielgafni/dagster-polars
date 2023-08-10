@@ -7,6 +7,7 @@ from dagster import DagsterInstance, OpExecutionContext, StaticPartitionsDefinit
 from deltalake import DeltaTable
 from hypothesis import given, settings
 from polars.testing.parametric import dataframes
+from _pytest.tmpdir import TempPathFactory
 
 from dagster_polars import PolarsDeltaIOManager
 from dagster_polars.io_managers.delta import DeltaWriteMode
@@ -19,8 +20,7 @@ from tests.utils import get_saved_path
 #  https://github.com/pola-rs/polars/issues/9627
 
 
-@given(
-    df=dataframes(
+delta_df_strategy =dataframes(
         excluded_dtypes=[
             pl.Categorical,
             pl.Duration,
@@ -34,27 +34,29 @@ from tests.utils import get_saved_path
         min_size=5,
         allow_infinities=False,
     )
-)
-@settings(max_examples=500, deadline=None)
-def test_polars_delta_io_manager(session_polars_delta_io_manager: PolarsDeltaIOManager, df: pl.DataFrame):
-    @asset(io_manager_def=session_polars_delta_io_manager, metadata={"overwrite_schema": True})
-    def upstream() -> pl.DataFrame:
-        return df
 
-    @asset(io_manager_def=session_polars_delta_io_manager, metadata={"overwrite_schema": True})
-    def downstream(upstream: pl.LazyFrame) -> pl.DataFrame:
-        return upstream.collect(streaming=True)
 
-    result = materialize(
-        [upstream, downstream],
-    )
+def test_polars_delta_io_manager(polars_delta_io_manager: PolarsDeltaIOManager):
+    # this test is not wrapped with `hypothesis.given` because it produces weird errors with deltalake
+    # .example() is called manually instead
+    for i in range(1000):
+        df = delta_df_strategy.example()
 
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.events_for_node("upstream")))
+        @asset(io_manager_def=polars_delta_io_manager, metadata={"overwrite_schema": True})
+        def upstream() -> pl.DataFrame:
+            return df
 
-    saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore[index,union-attr]
-    assert isinstance(saved_path, str)
-    pl_testing.assert_frame_equal(df, pl.read_delta(saved_path))
-    shutil.rmtree(saved_path)  # cleanup manually because of hypothesis
+        @asset(io_manager_def=polars_delta_io_manager, metadata={"overwrite_schema": True})
+        def downstream(upstream: pl.LazyFrame) -> pl.DataFrame:
+            return upstream.collect()
+
+        result = materialize(
+            [upstream, downstream],
+        )
+        saved_path = get_saved_path(result, "upstream")
+        assert isinstance(saved_path, str)
+        pl_testing.assert_frame_equal(df, pl.read_delta(saved_path))
+        shutil.rmtree(saved_path)  # cleanup manually because of hypothesis
 
 
 def test_polars_delta_io_manager_append(polars_delta_io_manager: PolarsDeltaIOManager):
@@ -198,3 +200,74 @@ def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIO
             downstream_load_multiple_partitions,
         ],
     )
+
+import shutil
+
+import polars as pl
+import polars.testing as pl_testing
+from _pytest.tmpdir import TempPathFactory
+from hypothesis import given, settings
+from polars.testing.parametric import dataframes
+
+# TODO: remove pl.Time once it's supported
+# TODO: remove pl.Duration pl.Duration once it's supported
+# https://github.com/pola-rs/polars/issues/9631
+# TODO: remove UInt types once they are fixed:
+#  https://github.com/pola-rs/polars/issues/9627
+@given(
+    df=dataframes(
+        excluded_dtypes=[
+            pl.Categorical,
+            pl.Duration,
+            pl.Time,
+            pl.UInt8,
+            pl.UInt16,
+            pl.UInt32,
+            pl.UInt64,
+            pl.Datetime("ns", None),
+        ],
+        min_size=5,
+        allow_infinities=False,
+    )
+)
+@settings(max_examples=3000, deadline=None)
+def test_polars_delta_io(df: pl.DataFrame, tmp_path_factory: TempPathFactory):
+    tmp_path = tmp_path_factory.mktemp("data")
+    df.write_delta(str(tmp_path))
+    pl_testing.assert_frame_equal(df, pl.scan_delta(str(tmp_path)).collect())
+    shutil.rmtree(str(tmp_path))  # cleanup manually because of hypothesis
+
+
+import shutil
+
+import polars as pl
+import polars.testing as pl_testing
+from _pytest.tmpdir import TempPathFactory
+from polars.testing.parametric import dataframes
+
+
+strategy = dataframes(
+    excluded_dtypes=[
+        pl.Categorical,
+        pl.Duration,
+        pl.Time,
+        pl.UInt8,
+        pl.UInt16,
+        pl.UInt32,
+        pl.UInt64,
+        pl.Datetime("ns", None),
+    ],
+    min_size=5,
+    allow_infinities=False,
+)
+
+
+def test_polars_delta_io(tmp_path_factory: TempPathFactory):
+    for i in range(3000):
+        tmp_path = tmp_path_factory.mktemp("data")
+        df = strategy.example()
+        assert isinstance(df, pl.DataFrame)
+
+        df.write_delta(str(tmp_path))
+        pl_testing.assert_frame_equal(df, pl.read_delta(str(tmp_path)))
+        shutil.rmtree(str(tmp_path))
