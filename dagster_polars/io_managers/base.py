@@ -79,16 +79,24 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     def dump_df_to_path(self, context: OutputContext, df: pl.DataFrame, path: UPath):
         ...
 
+    def sink_df_to_path(self, context: OutputContext, df: pl.LazyFrame, path: UPath):
+        raise NotImplementedError("LazyFrame sinking is not implemented in this IOManager")
+
     @abstractmethod
     def scan_df_from_path(self, path: UPath, context: InputContext) -> pl.LazyFrame:
         ...
 
-    def dump_to_path(self, context: OutputContext, obj: pl.DataFrame, path: UPath):
+    def dump_to_path(self, context: OutputContext, obj: Union[pl.DataFrame, pl.LazyFrame], path: UPath):
         if annotation_is_typing_optional(context.dagster_type.typing_type) and obj is None:
             context.log.warning(self.get_optional_output_none_log_message(context, path))
             return
         else:
-            self.dump_df_to_path(context=context, df=obj, path=path)
+            if isinstance(obj, pl.DataFrame):
+                self.dump_df_to_path(context=context, df=obj, path=path)
+            elif isinstance(obj, pl.LazyFrame):
+                self.sink_df_to_path(context=context, df=obj, path=path)
+            else:
+                raise ValueError(f"Can't dump object of type {type(obj)}")
 
     def load_from_path(self, path: UPath, context: InputContext) -> Union[pl.DataFrame, pl.LazyFrame, None]:
         if annotation_is_typing_optional(context.dagster_type.typing_type) and not path.exists():

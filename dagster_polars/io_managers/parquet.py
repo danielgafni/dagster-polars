@@ -55,3 +55,6 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
             ),
             allow_pyarrow_filter=context.metadata.get("allow_pyarrow_filter", True),
         )
+
+    def sink_df_to_path(self, context: OutputContext, df: pl.LazyFrame, path: UPath):
+        df.sink_parquet(str(path))  # TODO: pass storage_options once polars supports it
