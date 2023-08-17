@@ -4,7 +4,11 @@ from typing import Dict, Optional, Union
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
-from deltalake import DeltaTable
+
+try:
+    from deltalake import DeltaTable
+except ImportError as e:
+    raise ImportError("Install 'dagster-polars[deltalake]' to use DeltaLake functionality") from e
 from upath import UPath
 
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
