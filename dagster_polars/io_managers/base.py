@@ -1,6 +1,6 @@
 import sys
 from abc import abstractmethod
-from typing import Any, Dict, Mapping, Optional, Union, get_args, get_origin
+from typing import Any, Dict, Mapping, Optional, Tuple, Union, get_args, get_origin
 
 import polars as pl
 from dagster import (
@@ -19,36 +19,78 @@ from upath import UPath
 from dagster_polars.io_managers.utils import get_polars_metadata
 
 POLARS_EAGER_FRAME_ANNOTATIONS = [
-    Any,
     pl.DataFrame,
     Optional[pl.DataFrame],
+    # common default types
+    Any,
+    type(None),
+    None,
+    # multiple partitions
     Dict[str, pl.DataFrame],
     Dict[str, Optional[pl.DataFrame]],
     Mapping[str, pl.DataFrame],
     Mapping[str, Optional[pl.DataFrame]],
-    type(None),
-    None,
 ]
 
 POLARS_LAZY_FRAME_ANNOTATIONS = [
     pl.LazyFrame,
     Optional[pl.LazyFrame],
+    # multiple partitions
     Dict[str, pl.LazyFrame],
     Dict[str, Optional[pl.LazyFrame]],
     Mapping[str, pl.LazyFrame],
     Mapping[str, Optional[pl.LazyFrame]],
 ]
 
+# These annotations can be used to save/load metadata to/from *storage* (e.g. Parquet) along with the DataFrame
+METADATA_EAGER_ANNOTATIONS = [
+    Tuple[pl.DataFrame, Dict[str, Any]],
+    Optional[Tuple[pl.DataFrame, Dict[str, Any]]],
+]
+
+METADATA_LAZY_ANNOTATIONS = [
+    Tuple[pl.LazyFrame, Dict[str, Any]],
+    Optional[Tuple[pl.LazyFrame, Dict[str, Any]]],
+]
+
 
 if sys.version >= "3.9":
     POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
     POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.DataFrame]])  # type: ignore
+
     POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.LazyFrame])  # type: ignore
     POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.LazyFrame]])  # type: ignore
+
+    py_39_eager_annotations = [
+        tuple[pl.DataFrame, dict[str, Any]],
+        Tuple[pl.DataFrame, dict[str, Any]],
+        tuple[pl.DataFrame, Dict[str, Any]],
+    ]
+
+    METADATA_EAGER_ANNOTATIONS.extend(py_39_eager_annotations)
+
+    METADATA_EAGER_ANNOTATIONS.extend(Optional[a] for a in py_39_eager_annotations)
+
+    py_39_lazy_annotations = [
+        tuple[pl.DataFrame, dict[str, Any]],
+        Tuple[pl.DataFrame, dict[str, Any]],
+        tuple[pl.DataFrame, Dict[str, Any]],
+    ]
+
+    METADATA_LAZY_ANNOTATIONS.extend(py_39_lazy_annotations)
+
+    METADATA_LAZY_ANNOTATIONS.extend(Optional[a] for a in py_39_lazy_annotations)
+
+POLARS_EAGER_FRAME_ANNOTATIONS.extend(METADATA_EAGER_ANNOTATIONS)
+POLARS_LAZY_FRAME_ANNOTATIONS.extend(METADATA_LAZY_ANNOTATIONS)
 
 
 def annotation_is_typing_optional(annotation):
     return get_origin(annotation) == Union and type(None) in get_args(annotation)
+
+
+def annotation_is_tuple(annotation):
+    return get_origin(annotation) in (Tuple, tuple)
 
 
 class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
@@ -83,14 +125,30 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     def scan_df_from_path(self, path: UPath, context: InputContext) -> pl.LazyFrame:
         ...
 
-    def dump_to_path(self, context: OutputContext, obj: pl.DataFrame, path: UPath):
-        if annotation_is_typing_optional(context.dagster_type.typing_type) and obj is None:
+    def dump_to_path(
+        self,
+        context: OutputContext,
+        obj: Union[pl.DataFrame, Optional[pl.DataFrame], Tuple[pl.DataFrame, Dict[str, Any]]],
+        path: UPath,
+    ):
+        if annotation_is_typing_optional(context.dagster_type.typing_type) and (
+            obj is None or annotation_is_tuple(context.dagster_type.typing_type) and obj[0] is None
+        ):
             context.log.warning(self.get_optional_output_none_log_message(context, path))
             return
         else:
-            self.dump_df_to_path(context=context, df=obj, path=path)
+            if not annotation_is_tuple(context.dagster_type.typing_type):
+                self.dump_df_to_path(context=context, df=obj, path=path)
+            else:
+                df, metadata = obj
+                self.dump_df_to_path(context=context, df=df, path=path)
+                self.save_metadata_to_path(path=path, context=context, metadata=metadata)
 
-    def load_from_path(self, path: UPath, context: InputContext) -> Union[pl.DataFrame, pl.LazyFrame, None]:
+    def load_from_path(
+        self, path: UPath, context: InputContext
+    ) -> Union[
+        pl.DataFrame, pl.LazyFrame, Tuple[pl.DataFrame, Dict[str, Any]], Tuple[pl.LazyFrame, Dict[str, Any]], None
+    ]:
         if annotation_is_typing_optional(context.dagster_type.typing_type) and not path.exists():
             context.log.warning(self.get_missing_optional_input_log_message(context, path))
             return None
@@ -105,14 +163,27 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             ldf = ldf.select(columns)
 
         if context.dagster_type.typing_type in POLARS_EAGER_FRAME_ANNOTATIONS:
-            return ldf.collect(streaming=True)
+            df = ldf.collect()
+
+            if not annotation_is_tuple(context.dagster_type.typing_type):
+                return df
+            else:
+                return df, self.load_metadata_from_path(path=path, context=context)
+
         elif context.dagster_type.typing_type in POLARS_LAZY_FRAME_ANNOTATIONS:
-            return ldf
+            if not annotation_is_tuple(context.dagster_type.typing_type):
+                return ldf
+            else:
+                return ldf, self.load_metadata_from_path(path=path, context=context)
         else:
             raise NotImplementedError(f"Can't load object for type annotation {context.dagster_type.typing_type}")
 
     def get_metadata(self, context: OutputContext, obj: pl.DataFrame) -> Dict[str, MetadataValue]:
-        return get_polars_metadata(context, obj) if obj is not None else {"missing": MetadataValue.bool(True)}
+        if annotation_is_tuple(context.dagster_type.typing_type):
+            df = obj[0]
+        else:
+            df = obj
+        return get_polars_metadata(context, df) if df is not None else {"missing": MetadataValue.bool(True)}
 
     @staticmethod
     def get_storage_options(path: UPath) -> dict:
@@ -166,3 +237,9 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
     def get_optional_output_none_log_message(self, context: OutputContext, path: UPath) -> str:
         return f"The object for the optional output {context.name} is None, so it won't be saved to {path}!"
+
+    def save_metadata_to_path(self, path: UPath, context: OutputContext, metadata: Dict[str, Any]):
+        raise NotImplementedError(f"Saving metadata to storage is not supported for {self.__class__.__name__}")
+
+    def load_metadata_from_path(self, path: UPath, context: InputContext) -> Dict[str, Any]:
+        raise NotImplementedError(f"Loading metadata from storage is not supported for {self.__class__.__name__}")

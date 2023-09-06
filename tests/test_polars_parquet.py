@@ -1,4 +1,5 @@
 import os
+from typing import Any, Dict, Tuple
 
 import polars as pl
 import polars.testing as pl_testing
@@ -32,3 +33,24 @@ def test_polars_parquet_io_manager_read_write(
     saved_path = get_saved_path(result, "upstream")
     pl_testing.assert_frame_equal(df, pl.read_parquet(saved_path))
     os.remove(saved_path)  # cleanup manually because of hypothesis
+
+
+@given(df=dataframes(excluded_dtypes=[pl.Categorical], min_size=5))
+@settings(max_examples=1, deadline=None)
+def test_polars_parquet_io_manager_storage_metadata(
+    session_polars_parquet_io_manager: PolarsParquetIOManager, df: pl.DataFrame
+):
+    metadata = {"a": 1, "b": "2", "c": [1, 2, 3], "d": {"e": 1}, "f": [1, 2, 3, {"g": 1}]}
+
+    @asset(io_manager_def=session_polars_parquet_io_manager)
+    def upstream() -> Tuple[pl.DataFrame, Dict[str, Any]]:
+        return df, metadata
+
+    @asset(io_manager_def=session_polars_parquet_io_manager)
+    def downstream(upstream: Tuple[pl.DataFrame, Dict[str, Any]]) -> None:
+        df, upstream_metadata = upstream
+        assert upstream_metadata == metadata
+
+    materialize(
+        [upstream, downstream],
+    )
