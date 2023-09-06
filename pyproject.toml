@@ -63,6 +63,7 @@ strict = false
 vcs = "git"
 style = "pep440"
 dirty = true
+format = "v{base}+{distance}.{commit}"
 
 [tool.poetry-dynamic-versioning.substitution]
 files = [
