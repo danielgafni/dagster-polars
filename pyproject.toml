@@ -64,7 +64,7 @@ vcs = "git"
 style = "pep440"
 dirty = true
 bump = true
-no-metadata = true
+metadata = false
 
 [tool.poetry-dynamic-versioning.substitution]
 files = [
