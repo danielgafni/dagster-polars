@@ -152,7 +152,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
                 df = obj
                 self.dump_df_to_path(context=context, df=df, path=path)
             else:
-                obj = cast(Tuple[pl.DataFrame, StorageMetadata], obj)
+                obj = cast(Tuple[pl.DataFrame, Dict[str, Any]], obj)
                 df, metadata = obj
                 self.dump_df_to_path(context=context, df=df, path=path)
                 self.save_metadata_to_path(path=path, context=context, metadata=metadata)
