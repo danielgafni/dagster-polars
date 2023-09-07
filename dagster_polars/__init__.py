@@ -4,8 +4,10 @@ from dagster_polars.io_managers.parquet import PolarsParquetIOManager
 from dagster_polars.types import (
     DataFramePartitions,
     DataFramePartitionsWithMetadata,
+    DataFrameWithMetadata,
     LazyFramePartitions,
     LazyFramePartitionsWithMetadata,
+    LazyFrameWithMetadata,
     StorageMetadata,
 )
 
@@ -13,6 +15,8 @@ __all__ = [
     "PolarsParquetIOManager",
     "BasePolarsUPathIOManager",
     "StorageMetadata",
+    "DataFrameWithMetadata",
+    "LazyFrameWithMetadata",
     "DataFramePartitions",
     "LazyFramePartitions",
     "DataFramePartitionsWithMetadata",

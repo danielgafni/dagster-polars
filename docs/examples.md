@@ -104,6 +104,9 @@ def downstream(upstream: Optional[pl.DataFrame]) -> Optional[pl.DataFrame]:
 
 ## Reading/writing custom metadata into storage
 
+It's possible to write any custom metadata dict into storage for some IOManagers. For example, `PolarsParquetIOManager` supports this feature.
+
+
 ```python
 import polars as pl
 from dagster import asset
@@ -124,6 +127,25 @@ def downsteam(upstream: DataFrameWithMetadata):
     df, metadata = upstream
     assert metadata["my_custom_metadata"] == "my_custom_value"
 ```
+
+The metadata can be retrieved from the materialized asset outside of Dagster runtime.
+
+This can be done either by importing the `Definitions` object and referring to the asset by it's key:
+
+```python
+from dagster import DagsterInstance
+from dagster_polars import DataFrameWithMetadata
+
+from your_definitions import definitions  # noqa
+
+with DagsterInstance.ephemeral() as instance:
+    df, metadata = definitions.load_asset_value(
+        ["asset", "key"], python_type=DataFrameWithMetadata, instance=instance
+    )
+```
+
+or directly from the serialized asset (pedending on the IOManager metadata saving implementation).
+
 
 ## Append to DeltaLake table
 ```python
