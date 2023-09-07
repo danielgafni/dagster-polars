@@ -102,7 +102,7 @@ def downstream(upstream: Optional[pl.DataFrame]) -> Optional[pl.DataFrame]:
     return maybe_df
 ```
 
-## Reading/writing custom metadata into storage
+## Reading/writing custom metadata from/to storage
 
 It's possible to write any custom metadata dict into storage for some IOManagers. For example, `PolarsParquetIOManager` supports this feature.
 
