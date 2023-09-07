@@ -50,7 +50,7 @@ Complete description of `dagster_polars` behavior for all supported type annotat
 | `DataFramePartitionsWithMetadata` | read multiple DataFrames and metadata as `Dict[str, Tuple[DataFrame, StorageMetadata]]`. Raise an error if any of thems is not found in storage, unlesee `"allow_missing_partitions"` input metadata is set to `True` |
 | `LazyFramePartitionsWithMetadata` | read multiple LazyFrames and metadata as `Dict[str, Tuple[LazyFrame, StorageMetadata]]`. Raise an error if any of thems is not found in storage, unlesee `"allow_missing_partitions"` input metadata is set to `True` |
 
-Generic builtins (like `tuple[...]` instead of `Tuple[...]`) are supported for Python >= 3.8.
+Generic builtins (like `tuple[...]` instead of `Tuple[...]`) are supported for Python >= 3.9.
 
 ### `PolarsParquetIOManager`
 Implements reading and writing files in Apache Parquet format. Supports reading partitioned Parquet datasets (for example, often produced by Spark). All read/write options can be set via Dagster metadata values. Supports writing/reading custom metadata into the Parquet file's schema metadata.
