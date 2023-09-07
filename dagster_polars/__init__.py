@@ -1,10 +1,22 @@
 from dagster_polars._version import __version__
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 from dagster_polars.io_managers.parquet import PolarsParquetIOManager
+from dagster_polars.types import (
+    DataFramePartitions,
+    DataFramePartitionsWithMetadata,
+    LazyFramePartitions,
+    LazyFramePartitionsWithMetadata,
+    StorageMetadata,
+)
 
 __all__ = [
     "PolarsParquetIOManager",
     "BasePolarsUPathIOManager",
+    "StorageMetadata",
+    "DataFramePartitions",
+    "LazyFramePartitions",
+    "DataFramePartitionsWithMetadata",
+    "LazyFramePartitionsWithMetadata",
     "__version__",
 ]
 
