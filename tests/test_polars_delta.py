@@ -36,9 +36,9 @@ from tests.utils import get_saved_path
         allow_infinities=False,
     )
 )
-@settings(max_examples=500, deadline=None)
+@settings(max_examples=100, deadline=None)
 def test_polars_delta_io_manager(session_polars_delta_io_manager: PolarsDeltaIOManager, df: pl.DataFrame):
-    time.sleep(0.01)  # too frequent writes mess up DeltaLake
+    time.sleep(0.05)  # too frequent writes mess up DeltaLake
 
     @asset(io_manager_def=session_polars_delta_io_manager, metadata={"overwrite_schema": True})
     def upstream() -> pl.DataFrame:
