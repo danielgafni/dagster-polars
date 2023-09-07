@@ -13,7 +13,6 @@ from dagster import (
     UPathIOManager,
 )
 from dagster import _check as check
-from packaging.version import Version
 from pydantic.fields import Field, PrivateAttr
 from upath import UPath
 
@@ -59,7 +58,7 @@ POLARS_LAZY_FRAME_ANNOTATIONS = [
 ]
 
 
-if Version(sys.version) >= Version("3.9"):
+if sys.version_info >= (3, 9):
     POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
     POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.DataFrame]])  # type: ignore
 
