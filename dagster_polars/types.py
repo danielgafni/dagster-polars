@@ -12,9 +12,9 @@ StorageMetadata: TypeAlias = Dict[str, Any]
 DataFrameWithMetadata: TypeAlias = Tuple[pl.DataFrame, StorageMetadata]
 LazyFrameWithMetadata: TypeAlias = Tuple[pl.LazyFrame, StorageMetadata]
 DataFramePartitions: TypeAlias = Dict[str, pl.DataFrame]
-DataFramePartitionsWithMetadata: TypeAlias = Dict[str, Tuple[pl.DataFrame, StorageMetadata]]
+DataFramePartitionsWithMetadata: TypeAlias = Dict[str, DataFrameWithMetadata]
 LazyFramePartitions: TypeAlias = Dict[str, pl.LazyFrame]
-LazyFramePartitionsWithMetadata: TypeAlias = Dict[str, Tuple[pl.LazyFrame, StorageMetadata]]
+LazyFramePartitionsWithMetadata: TypeAlias = Dict[str, LazyFrameWithMetadata]
 
 __all__ = [
     "StorageMetadata",
