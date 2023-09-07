@@ -9,6 +9,8 @@ else:
 import polars as pl
 
 StorageMetadata: TypeAlias = Dict[str, Any]
+DataFrameWithMetadata: TypeAlias = Tuple[pl.DataFrame, StorageMetadata]
+LazyFrameWithMetadata: TypeAlias = Tuple[pl.LazyFrame, StorageMetadata]
 DataFramePartitions: TypeAlias = Dict[str, pl.DataFrame]
 DataFramePartitionsWithMetadata: TypeAlias = Dict[str, Tuple[pl.DataFrame, StorageMetadata]]
 LazyFramePartitions: TypeAlias = Dict[str, pl.LazyFrame]
@@ -16,6 +18,8 @@ LazyFramePartitionsWithMetadata: TypeAlias = Dict[str, Tuple[pl.LazyFrame, Stora
 
 __all__ = [
     "StorageMetadata",
+    "DataFrameWithMetadata",
+    "LazyFrameWithMetadata",
     "DataFramePartitions",
     "DataFramePartitionsWithMetadata",
     "LazyFramePartitions",
