@@ -34,36 +34,38 @@ def test_polars_upath_io_manager_stats_metadata(io_manager_and_df: Tuple[BasePol
 
     stats = handled_output_events[0].event_specific_data.metadata["stats"].value  # type: ignore  # noqa
 
-    assert (
-        DeepDiff(
-            stats,
-            {
-                "a": {
-                    "count": 3.0,
-                    "null_count": 1.0,
-                    "mean": 0.5,
-                    "std": 0.7071067811865476,
-                    "min": 0.0,
-                    "max": 1.0,
-                    "median": 0.5,
-                    "25%": 0.0,
-                    "75%": 1.0,
-                },
-                "b": {
-                    "count": "3",
-                    "null_count": "0",
-                    "mean": "null",
-                    "std": "null",
-                    "min": "a",
-                    "max": "c",
-                    "median": "null",
-                    "25%": "null",
-                    "75%": "null",
-                },
-            },
-        )
-        == {}
-    )
+    expected_stats = {
+        "a": {
+            "count": 3.0,
+            "null_count": 1.0,
+            "mean": 0.5,
+            "std": 0.7071067811865476,
+            "min": 0.0,
+            "max": 1.0,
+            "median": 0.5,
+            "25%": 0.0,
+            "75%": 1.0,
+        },
+        "b": {
+            "count": "3",
+            "null_count": "0",
+            "mean": "null",
+            "std": "null",
+            "min": "a",
+            "max": "c",
+            "median": "null",
+            "25%": "null",
+            "75%": "null",
+        },
+    }
+
+    from packaging.version import Version
+
+    if Version(pl.__version__) >= Version("0.18.0"):
+        expected_stats["a"]["50%"] = expected_stats["a"].pop("median")
+        expected_stats["b"]["50%"] = expected_stats["b"].pop("median")
+
+    assert DeepDiff(stats, expected_stats) == {}
 
 
 def test_polars_upath_io_manager_type_annotations(io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame]):
