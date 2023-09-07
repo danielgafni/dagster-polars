@@ -135,6 +135,20 @@ jupyter = ["ipython (>=7.8.0)", "tokenize-rt (>=3.2.0)"]
 uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
+name = "blacken-docs"
+version = "1.16.0"
+description = "Run Black on Python code blocks in documentation files."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "blacken_docs-1.16.0-py3-none-any.whl", hash = "sha256:b0dcb84b28ebfb352a2539202d396f50e15a54211e204a8005798f1d1edb7df8"},
+    {file = "blacken_docs-1.16.0.tar.gz", hash = "sha256:b4bdc3f3d73898dfbf0166f292c6ccfe343e65fc22ddef5319c95d1a8dcc6c1c"},
+]
+
+[package.dependencies]
+black = ">=22.1.0"
+
+[[package]]
 name = "cachetools"
 version = "5.3.1"
 description = "Extensible memoizing collections and decorators"
@@ -1868,28 +1882,31 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "polars"
-version = "0.18.2"
+version = "0.19.2"
 description = "Blazingly fast DataFrame library"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "polars-0.18.2-cp37-abi3-macosx_10_7_x86_64.whl", hash = "sha256:14d3aa34814abfa1adefbce7f65407a0de9fc46de8afe08c3db3253d08329e2e"},
-    {file = "polars-0.18.2-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:3008987572ef7c5693eb3b3809c2df69958b2856dfbc65f631eaa4be33d6ea54"},
-    {file = "polars-0.18.2-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:906bbf60c77033892e7efbcdebd657ee5b14797e18004277b8866f9e3e200caa"},
-    {file = "polars-0.18.2-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5707467919d0371d1ef87e5963920b82534245a5ea3681e110885c0867e9c3b5"},
-    {file = "polars-0.18.2-cp37-abi3-win_amd64.whl", hash = "sha256:a3e29f7b17cf7345d552e817d049becde59824cb0dda0f98fe08355582d6ee73"},
-    {file = "polars-0.18.2.tar.gz", hash = "sha256:de1dc24c2ff7eb9ac379161501a1b1777c5febdcad341532495c0fc1651968c0"},
+    {file = "polars-0.19.2-cp38-abi3-macosx_10_7_x86_64.whl", hash = "sha256:a49aa12cb6559329e0d239acde98f91542e28118ff5fe7976f789d2c243d2958"},
+    {file = "polars-0.19.2-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:8b16bc14be88f0f0fd7e038fae8fb18fc077783722d1170268624750fc76b56a"},
+    {file = "polars-0.19.2-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fd2382b587b8d6c8b30213ae9ead77d924f30ebc6fae488f42f49fa24a884f8c"},
+    {file = "polars-0.19.2-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cd913889810f7f1d2b5f9849b7509f95e63383e75d04fca6512ad8bd04880856"},
+    {file = "polars-0.19.2-cp38-abi3-win_amd64.whl", hash = "sha256:59002baaf7c85703476bdb9736faeb86b686f5e790e5054c4bc66ae5da157a8c"},
+    {file = "polars-0.19.2.tar.gz", hash = "sha256:04e0e51374d5934ab77ad435a2e8d78ca964ee79625c743cae50b7d9b8716423"},
 ]
 
 [package.extras]
-all = ["polars[connectorx,deltalake,fsspec,matplotlib,numpy,pandas,pyarrow,sqlalchemy,timezone,xlsx2csv,xlsxwriter]"]
+adbc = ["adbc_driver_sqlite"]
+all = ["polars[adbc,cloudpickle,connectorx,deltalake,fsspec,matplotlib,numpy,pandas,pyarrow,pydantic,sqlalchemy,timezone,xlsx2csv,xlsxwriter]"]
+cloudpickle = ["cloudpickle"]
 connectorx = ["connectorx"]
-deltalake = ["deltalake (>=0.8.0)"]
+deltalake = ["deltalake (>=0.10.0)"]
 fsspec = ["fsspec"]
 matplotlib = ["matplotlib"]
 numpy = ["numpy (>=1.16.0)"]
 pandas = ["pandas", "pyarrow (>=7.0.0)"]
 pyarrow = ["pyarrow (>=7.0.0)"]
+pydantic = ["pydantic (>=2.0.0)"]
 sqlalchemy = ["pandas", "sqlalchemy"]
 timezone = ["backports.zoneinfo", "tzdata"]
 xlsx2csv = ["xlsx2csv (>=0.8.0)"]
@@ -2138,13 +2155,13 @@ files = [
 
 [[package]]
 name = "pyright"
-version = "1.1.313"
+version = "1.1.326"
 description = "Command line wrapper for pyright"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pyright-1.1.313-py3-none-any.whl", hash = "sha256:1aeed72d5563e97461cb9d17847bfa918f7ec0cf79912bb3d2432fbe014daa23"},
-    {file = "pyright-1.1.313.tar.gz", hash = "sha256:95fa963337e2cfd4900601197d0f866d8c51732dea6c0bb12f962f92a79c77e3"},
+    {file = "pyright-1.1.326-py3-none-any.whl", hash = "sha256:f3c5047465138558d3d106a9464cc097cf2c3611da6edcf5b535cc1fdebd45db"},
+    {file = "pyright-1.1.326.tar.gz", hash = "sha256:cecbe026b14034ba0750db605718a8c2605552387c5772dfaf7f3e632cb7212a"},
 ]
 
 [package.dependencies]
@@ -2634,13 +2651,13 @@ telegram = ["requests"]
 
 [[package]]
 name = "typing-extensions"
-version = "4.6.3"
+version = "4.7.1"
 description = "Backported and Experimental Type Hints for Python 3.7+"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "typing_extensions-4.6.3-py3-none-any.whl", hash = "sha256:88a4153d8505aabbb4e13aacb7c486c2b4a33ca3b3f807914a9b4c844c471c26"},
-    {file = "typing_extensions-4.6.3.tar.gz", hash = "sha256:d91d5919357fe7f681a9f2b5b4cb2a5f1ef0a1e9f59c4d8ff0d3491e05c0ffd5"},
+    {file = "typing_extensions-4.7.1-py3-none-any.whl", hash = "sha256:440d5dd3af93b060174bf433bccd69b0babc3b15b1a8dca43789fd7f61514b36"},
+    {file = "typing_extensions-4.7.1.tar.gz", hash = "sha256:b75ddc264f0ba5615db7ba217daeb99701ad295353c45f9e95963337ceeeffb2"},
 ]
 
 [[package]]
@@ -3048,4 +3065,4 @@ gcp = ["dagster-gcp"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "30e0c97d03db966652f9dd5b6349c8f8cc96be7d7e9b67135294f9f8d84f95fd"
+content-hash = "a102d96ff4dc4b3bc3be038c7e2473346f006acc2422ee421769fe57e0f45de1"

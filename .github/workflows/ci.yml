@@ -1,8 +1,19 @@
-name: check
+name: CI
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
   schedule:
     - cron: "0 8 * * *"
+  release:
+    types:
+      - created
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
   test:
@@ -22,6 +33,7 @@ jobs:
         polars_version:
           - "0.17.0"
           - "0.18.0"
+          - "0.19.0"
     steps:
       - name: Setup python for test ${{ matrix.py }}
         uses: actions/setup-python@v2
@@ -36,7 +48,7 @@ jobs:
           virtualenvs-in-project: false
           installer-parallel: true
       - name: Install dependencies
-        run: poetry install --all-extras --sync && pip install --ignore-installed polars~=${{ matrix.polars_version }}
+        run: poetry install --all-extras --sync && pip install --ignore-installed --force-reinstall polars~=${{ matrix.polars_version }}
       - name: Print polars info
         run: python -c 'import polars; print(polars.show_versions())'
       - name: Run tests
@@ -72,6 +84,35 @@ jobs:
           virtualenvs-in-project: false
           installer-parallel: true
       - name: Install dependencies
-        run: poetry install --all-extras --sync && pip install --ignore-installed polars~=${{ matrix.polars_version }}
+        run: poetry install --all-extras --sync && pip install --ignore-installed --force-reinstall polars~=${{ matrix.polars_version }}
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
+
+  publish:
+    needs: [test, lint]
+    if: contains(github.ref, 'refs/tags/')
+    name: Publish to PyPI
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - uses: actions/checkout@v2
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.4.2
+          virtualenvs-create: false
+          virtualenvs-in-project: false
+          installer-parallel: true
+      - name: Install poetry-dynamic-versioning
+        run: poetry self add poetry-dynamic-versioning@0.21.4
+      - name: Publish to PyPI
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          poetry config pypi-token.pypi $PYPI_TOKEN
+          poetry publish --build

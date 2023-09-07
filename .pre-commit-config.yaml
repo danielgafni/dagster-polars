@@ -36,10 +36,15 @@ repos:
         entry: black .
         language: system
         pass_filenames: false
+      - id: black-docs
+        name: black-docs
+        entry: blacken-docs
+        language: system
+        pass_filenames: true
+        files: '\.md$'
 
       - id: pyright
         name: pyright
         entry: pyright .
         language: system
         pass_filenames: false
-
