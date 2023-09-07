@@ -1,6 +1,6 @@
 import sys
 from abc import abstractmethod
-from typing import Any, Dict, Mapping, Optional, Tuple, Union, cast, get_args, get_origin
+from typing import Any, Dict, Literal, Mapping, Optional, Tuple, Union, cast, get_args, get_origin, overload
 
 import polars as pl
 from dagster import (
@@ -22,6 +22,7 @@ from dagster_polars.types import (
     DataFramePartitionsWithMetadata,
     LazyFramePartitions,
     LazyFramePartitionsWithMetadata,
+    LazyFrameWithMetadata,
     StorageMetadata,
 )
 
@@ -127,11 +128,29 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         )
 
     @abstractmethod
-    def dump_df_to_path(self, context: OutputContext, df: pl.DataFrame, path: UPath):
+    def dump_df_to_path(
+        self, context: OutputContext, df: pl.DataFrame, path: UPath, metadata: Optional[StorageMetadata] = None
+    ):
+        ...
+
+    @overload
+    @abstractmethod
+    def scan_df_from_path(
+        self, path: UPath, context: InputContext, with_metadata: Literal[None, False]
+    ) -> pl.LazyFrame:
+        ...
+
+    @overload
+    @abstractmethod
+    def scan_df_from_path(
+        self, path: UPath, context: InputContext, with_metadata: Literal[True]
+    ) -> LazyFrameWithMetadata:
         ...
 
     @abstractmethod
-    def scan_df_from_path(self, path: UPath, context: InputContext) -> pl.LazyFrame:
+    def scan_df_from_path(
+        self, path: UPath, context: InputContext, with_metadata: Optional[bool] = False
+    ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
         ...
 
     def dump_to_path(
@@ -154,8 +173,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             else:
                 obj = cast(Tuple[pl.DataFrame, Dict[str, Any]], obj)
                 df, metadata = obj
-                self.dump_df_to_path(context=context, df=df, path=path)
-                self.save_metadata_to_path(path=path, context=context, metadata=metadata)
+                self.dump_df_to_path(context=context, df=df, path=path, metadata=metadata)
 
     def load_from_path(
         self, path: UPath, context: InputContext
@@ -168,7 +186,14 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
         assert context.metadata is not None
 
-        ldf = self.scan_df_from_path(path=path, context=context)
+        metadata: Optional[StorageMetadata] = None
+
+        return_storage_metadata = annotation_for_storage_metadata(context.dagster_type.typing_type)
+
+        if not return_storage_metadata:
+            ldf = self.scan_df_from_path(path=path, context=context)  # type: ignore
+        else:
+            ldf, metadata = self.scan_df_from_path(path=path, context=context, with_metadata=True)
 
         columns = context.metadata.get("columns")
         if columns is not None:
@@ -176,18 +201,18 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             ldf = ldf.select(columns)
 
         if context.dagster_type.typing_type in POLARS_EAGER_FRAME_ANNOTATIONS:
-            df = ldf.collect()
-
-            if not annotation_for_storage_metadata(context.dagster_type.typing_type):
-                return df
+            if not return_storage_metadata:
+                return ldf.collect()
             else:
-                return df, self.load_metadata_from_path(path=path, context=context)
+                assert metadata is not None
+                return ldf.collect(), metadata
 
         elif context.dagster_type.typing_type in POLARS_LAZY_FRAME_ANNOTATIONS:
-            if not annotation_for_storage_metadata(context.dagster_type.typing_type):
+            if not return_storage_metadata:
                 return ldf
             else:
-                return ldf, self.load_metadata_from_path(path=path, context=context)
+                assert metadata is not None
+                return ldf, metadata
         else:
             raise NotImplementedError(f"Can't load object for type annotation {context.dagster_type.typing_type}")
 

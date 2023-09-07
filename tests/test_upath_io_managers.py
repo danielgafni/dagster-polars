@@ -372,8 +372,9 @@ def test_upath_io_manager_storage_metadata_eager(
 
     @asset(io_manager_def=io_manager_def)
     def downstream(upstream: Tuple[pl.DataFrame, StorageMetadata]) -> None:
-        df, upstream_metadata = upstream
+        loaded_df, upstream_metadata = upstream
         assert upstream_metadata == metadata
+        pl_testing.assert_frame_equal(loaded_df, df)
 
     materialize(
         [upstream, downstream],
