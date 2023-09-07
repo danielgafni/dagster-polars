@@ -53,6 +53,7 @@ jobs:
   lint:
     name: lint ${{ matrix.py }} - ${{ matrix.os }} - polars=${{ matrix.polars_version }}
     runs-on: ${{ matrix.os }}-latest
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:

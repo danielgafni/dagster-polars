@@ -3062,4 +3062,4 @@ gcp = ["dagster-gcp"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "086db40f383c48594f6a56506ea6611a8444c603b0c90abc4d00f7de58a385b3"
+content-hash = "a102d96ff4dc4b3bc3be038c7e2473346f006acc2422ee421769fe57e0f45de1"
