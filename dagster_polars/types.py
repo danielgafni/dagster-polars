@@ -1,7 +1,7 @@
 import sys
 from typing import Any, Dict, Tuple
 
-if sys.version < "3.9":
+if sys.version < "3.10":
     from typing_extensions import TypeAlias
 else:
     from typing import TypeAlias
