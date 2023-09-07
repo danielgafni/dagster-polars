@@ -62,8 +62,10 @@ def test_polars_upath_io_manager_stats_metadata(io_manager_and_df: Tuple[BasePol
     from packaging.version import Version
 
     if Version(pl.__version__) >= Version("0.18.0"):
-        expected_stats["a"]["50%"] = expected_stats["a"].pop("median")
-        expected_stats["b"]["50%"] = expected_stats["b"].pop("median")
+        expected_stats["a"].pop("median")
+        expected_stats["a"]["50%"] = 1.0
+        expected_stats["b"].pop("median")
+        expected_stats["b"]["50%"] = "null"
 
     assert DeepDiff(stats, expected_stats) == {}
 
