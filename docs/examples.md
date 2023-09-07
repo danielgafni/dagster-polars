@@ -144,7 +144,14 @@ with DagsterInstance.ephemeral() as instance:
     )
 ```
 
-or directly from the serialized asset (pedending on the IOManager metadata saving implementation).
+or directly from the serialized asset (depending on the IOManager metadata saving implementation). For example, with `PolarsParquetIOManager`:
+
+```python
+from dagster_polars import PolarsParquetIOManager
+from upath import UPath
+
+metadata = PolarsParquetIOManager.read_parquet_metadata(UPath("/asset/key.parquet"))
+```
 
 
 ## Append to DeltaLake table

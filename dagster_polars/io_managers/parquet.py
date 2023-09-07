@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Union
+from typing import Union
 
 import fsspec
 import polars as pl
@@ -10,6 +10,7 @@ from upath import UPath
 
 from dagster_polars.constants import DAGSTER_POLARS_STORAGE_METADATA_KEY
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
+from dagster_polars.types import StorageMetadata
 
 
 class PolarsParquetIOManager(BasePolarsUPathIOManager):
@@ -59,7 +60,16 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
             allow_pyarrow_filter=context.metadata.get("allow_pyarrow_filter", True),
         )
 
-    def save_metadata_to_path(self, path: UPath, context: OutputContext, metadata: Dict[str, Any]):
+    def save_metadata_to_path(self, path: UPath, context: OutputContext, metadata: StorageMetadata):
+        context.log.debug(f"Writing Parquet metadata to {path}...")
+        self.write_parquet_metadata(path, metadata)
+
+    def load_metadata_from_path(self, path: UPath, context: InputContext) -> StorageMetadata:
+        context.log.debug(f"Reading Parquet metadata from {path}...")
+        return self.read_parquet_metadata(path)
+
+    @classmethod
+    def write_parquet_metadata(cls, path: UPath, metadata: StorageMetadata):
         existing_table = pyarrow.parquet.read_table(str(path), filesystem=path.fs if hasattr(path, "fs") else None)
         existing_metadata = (
             existing_table.schema.metadata.to_dict() if existing_table.schema.metadata is not None else {}
@@ -70,7 +80,8 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
             existing_table.schema, str(path), filesystem=path.fs if hasattr(path, "fs") else None
         )
 
-    def load_metadata_from_path(self, path: UPath, context: InputContext) -> Dict[str, Any]:
+    @classmethod
+    def read_parquet_metadata(cls, path: UPath) -> StorageMetadata:
         metadata = pyarrow.parquet.read_metadata(
             str(path), filesystem=path.fs if hasattr(path, "fs") else None
         ).metadata
