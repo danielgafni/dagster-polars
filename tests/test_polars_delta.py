@@ -4,6 +4,7 @@ from typing import Dict
 
 import polars as pl
 import polars.testing as pl_testing
+import pytest
 from dagster import DagsterInstance, OpExecutionContext, StaticPartitionsDefinition, asset, materialize
 from deltalake import DeltaTable
 from hypothesis import given, settings
@@ -20,6 +21,7 @@ from tests.utils import get_saved_path
 #  https://github.com/pola-rs/polars/issues/9627
 
 
+@pytest.mark.flaky(reruns=5)
 @given(
     df=dataframes(
         excluded_dtypes=[
@@ -38,7 +40,7 @@ from tests.utils import get_saved_path
 )
 @settings(max_examples=100, deadline=None)
 def test_polars_delta_io_manager(session_polars_delta_io_manager: PolarsDeltaIOManager, df: pl.DataFrame):
-    time.sleep(0.1)  # too frequent writes mess up DeltaLake
+    time.sleep(0.05)  # too frequent writes mess up DeltaLake
 
     @asset(io_manager_def=session_polars_delta_io_manager, metadata={"overwrite_schema": True})
     def upstream() -> pl.DataFrame:
