@@ -125,7 +125,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         self._base_path = (
             UPath(self.base_dir, **(self.upath_kwargs or {}))
             if self.base_dir is not None
-            else UPath(check.not_none(context.instance).storage_directory())
+            else UPath(check.not_none(context.instance).storage_directory(), **(self.upath_kwargs or {}))
         )
 
     @abstractmethod
