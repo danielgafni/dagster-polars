@@ -117,12 +117,13 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     """
 
     base_dir: Optional[str] = Field(default=None, description="Base directory for storing files.")
+    upath_kwargs: Optional[Dict[str, Any]] = Field(default=None, description="extra kwargs for universal-pathlib")
 
     _base_path: UPath = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._base_path = (
-            UPath(self.base_dir)
+            UPath(self.base_dir, **(self.upath_kwargs or {}))
             if self.base_dir is not None
             else UPath(check.not_none(context.instance).storage_directory())
         )
