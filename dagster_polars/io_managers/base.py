@@ -125,7 +125,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         default=None, description="extra kwargs for universal-pathlib (shown in Dagster's UI)"
     )
     # these are supposed to be passed as raw Python object and are not visible in Dagster's UI
-    # BUT HEY ACTUALLY ARE RIGHT NOW LOL
+    # BUT THEY ACTUALLY ARE RIGHT NOW LOL
     upath_private_kwargs: ResourceDependency[Optional[Dict[str, Any]]] = Field(
         default=None, description="extra kwargs for universal-pathlib (hidden)"
     )
