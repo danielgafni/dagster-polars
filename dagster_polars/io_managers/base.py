@@ -10,6 +10,7 @@ from dagster import (
     MetadataValue,
     MultiPartitionKey,
     OutputContext,
+    ResourceDependency,
     UPathIOManager,
 )
 from dagster import _check as check
@@ -114,18 +115,30 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
      - the "columns" input metadata value can be used to select a subset of columns
      - inherits all the features of the `UPathIOManager` - works with local and remote filesystems (like S3),
          supports loading multiple partitions, ...
+     - upath kwargs can be passed via the `upath_public_kwargs` and `upath_private_kwargs` fields
     """
 
     base_dir: Optional[str] = Field(default=None, description="Base directory for storing files.")
-    upath_kwargs: Optional[Dict[str, Any]] = Field(default=None, description="extra kwargs for universal-pathlib")
+
+    # these are visible in Dagster's UI!
+    upath_public_kwargs: Optional[Dict[str, Any]] = Field(
+        default=None, description="extra kwargs for universal-pathlib (shown in Dagster's UI)"
+    )
+    # these are supposed to be passed as raw Python object and are not visible in Dagster's UI
+    # BUT HEY ACTUALLY ARE RIGHT NOW LOL
+    upath_private_kwargs: ResourceDependency[Optional[Dict[str, Any]]] = Field(
+        default=None, description="extra kwargs for universal-pathlib (hidden)"
+    )
 
     _base_path: UPath = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
+        upath_kwargs = dict(**(self.upath_public_kwargs or {}), **(self.upath_private_kwargs or {}))
+
         self._base_path = (
-            UPath(self.base_dir, **(self.upath_kwargs or {}))
+            UPath(self.base_dir, **upath_kwargs)
             if self.base_dir is not None
-            else UPath(check.not_none(context.instance).storage_directory(), **(self.upath_kwargs or {}))
+            else UPath(check.not_none(context.instance).storage_directory(), **upath_kwargs)
         )
 
     @abstractmethod

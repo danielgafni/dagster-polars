@@ -6,8 +6,6 @@ concurrency:
 
 on:
   push:
-  schedule:
-    - cron: "0 8 * * *"
   release:
     types:
       - created

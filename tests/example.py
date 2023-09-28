@@ -11,7 +11,13 @@ def my_parquet_asset() -> pl.DataFrame:
     return pl.DataFrame({"a": [0, 1, None], "b": ["a", "b", "c"]})
 
 
-@asset(io_manager_def=PolarsDeltaIOManager(base_dir="/tmp/dagster"))
+@asset(
+    io_manager_def=PolarsDeltaIOManager(
+        base_dir="/tmp/dagster",
+        upath_public_kwargs={"endoiunt_url": "https://my-endpoint:5757"},
+        upath_private_kwargs={"aws_secret_access_key": "secret"},
+    )
+)
 def my_delta_asset() -> pl.DataFrame:
     return pl.DataFrame({"a": [0, 1, None], "b": ["a", "b", "c"]})
 
