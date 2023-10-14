@@ -334,35 +334,31 @@ python-dateutil = "*"
 
 [[package]]
 name = "dagit"
-version = "1.3.11"
+version = "1.5.3"
 description = "Web UI for dagster."
 optional = false
 python-versions = "*"
 files = [
-    {file = "dagit-1.3.11-py3-none-any.whl", hash = "sha256:9b3f65535807d3214dfdfb46f271f6034d81690cc71937bed4f3b39626c56a94"},
-    {file = "dagit-1.3.11.tar.gz", hash = "sha256:f22b95553bfbc215d78ed9905fa020f5bf8e4bd6233f82725a71f5f0971e54f5"},
+    {file = "dagit-1.5.3-py3-none-any.whl", hash = "sha256:5430d6a813235de1a133ed2f29e6cb8c497a99c61f4aee8b2d3c1bdf3774aeeb"},
+    {file = "dagit-1.5.3.tar.gz", hash = "sha256:b44cad3d9fa54c9203a75c8933b321e0351de203494793db84ce92818ab58eab"},
 ]
 
 [package.dependencies]
-click = ">=7.0,<9.0"
-dagster = "1.3.11"
-dagster-graphql = "1.3.11"
-starlette = "*"
-uvicorn = {version = "*", extras = ["standard"]}
+dagster-webserver = "1.5.3"
 
 [package.extras]
-notebook = ["nbconvert"]
-test = ["starlette[full]"]
+notebook = ["dagster-webserver[notebook] (==1.5.3)"]
+test = ["dagster-webserver[test] (==1.5.3)"]
 
 [[package]]
 name = "dagster"
-version = "1.3.11"
-description = "The data orchestration platform built for productivity."
+version = "1.5.3"
+description = "Dagster is an orchestration platform for the development, production, and observation of data assets."
 optional = false
 python-versions = "*"
 files = [
-    {file = "dagster-1.3.11-py3-none-any.whl", hash = "sha256:8967efad4e75deaad9f7da4031bf5583336063acc127c29ad215a0ba0b71177a"},
-    {file = "dagster-1.3.11.tar.gz", hash = "sha256:20431db82f3d0b2bb47d0828a3ea25ece4ea24f6d8ca8475f7ecc7a0a66d841c"},
+    {file = "dagster-1.5.3-py3-none-any.whl", hash = "sha256:b4d19962c407710ceaddb42f8a99290b688b9e38d33f4621e656dfa7115c8196"},
+    {file = "dagster-1.5.3.tar.gz", hash = "sha256:0f417cf7e152d861cc184f69cedb147c5abef08562698a63dad481221097ceb1"},
 ]
 
 [package.dependencies]
@@ -370,15 +366,10 @@ alembic = ">=1.2.1,<1.6.3 || >1.6.3,<1.7.0 || >1.7.0,<1.11.0 || >1.11.0"
 click = ">=5.0"
 coloredlogs = ">=6.1,<=14.0"
 croniter = ">=0.3.34"
+dagster-pipes = "1.5.3"
 docstring-parser = "*"
-grpcio = [
-    {version = ">=1.44.0,<1.48.0", markers = "python_version < \"3.11\""},
-    {version = ">=1.44.0", markers = "python_version >= \"3.11\""},
-]
-grpcio-health-checking = [
-    {version = ">=1.44.0,<1.48.0", markers = "python_version < \"3.11\""},
-    {version = ">=1.44.0", markers = "python_version >= \"3.11\""},
-]
+grpcio = ">=1.44.0"
+grpcio-health-checking = ">=1.44.0"
 Jinja2 = "*"
 packaging = ">=20.9"
 pendulum = "*"
@@ -402,27 +393,27 @@ universal-pathlib = "*"
 watchdog = ">=0.8.3"
 
 [package.extras]
-black = ["black[jupyter] (==22.12.0)"]
+black = ["black[jupyter] (==23.9.1)"]
 docker = ["docker"]
 mypy = ["mypy (==0.991)"]
-pyright = ["pandas-stubs", "pyright (==1.1.298)", "types-PyYAML", "types-backports", "types-certifi", "types-chardet", "types-croniter", "types-cryptography", "types-mock", "types-paramiko", "types-pkg-resources", "types-pyOpenSSL", "types-python-dateutil", "types-pytz", "types-requests", "types-simplejson", "types-six", "types-sqlalchemy (==1.4.53.34)", "types-tabulate", "types-toml", "types-tzlocal"]
-ruff = ["ruff (==0.0.255)"]
-test = ["buildkite-test-collector", "docker", "grpcio-tools (>=1.44.0)", "grpcio-tools (>=1.44.0,<1.48.0)", "mock (==3.0.5)", "objgraph", "pytest (==7.0.1)", "pytest-cov (==2.10.1)", "pytest-dependency (==0.5.1)", "pytest-mock (==3.3.1)", "pytest-rerunfailures (==10.0)", "pytest-runner (==5.2)", "pytest-xdist (==2.1.0)", "responses", "snapshottest (==0.6.0)", "tox (==3.25.0)", "yamllint"]
+pyright = ["pandas-stubs", "pyright (==1.1.327)", "types-PyYAML", "types-backports", "types-certifi", "types-chardet", "types-croniter", "types-cryptography", "types-mock", "types-paramiko", "types-pkg-resources", "types-pyOpenSSL", "types-python-dateutil", "types-pytz", "types-requests", "types-simplejson", "types-six", "types-sqlalchemy (==1.4.53.34)", "types-tabulate", "types-toml", "types-tzlocal"]
+ruff = ["ruff (==0.0.289)"]
+test = ["buildkite-test-collector", "docker", "grpcio-tools (>=1.44.0)", "mock (==3.0.5)", "morefs[asynclocal]", "objgraph", "pytest (>=7.0.1)", "pytest-cov (==2.10.1)", "pytest-dependency (==0.5.1)", "pytest-mock (==3.3.1)", "pytest-rerunfailures (==10.0)", "pytest-runner (==5.2)", "pytest-xdist (==2.1.0)", "responses (<=0.23.1)", "syrupy (<4)", "tox (==3.25.0)", "yamllint"]
 
 [[package]]
 name = "dagster-gcp"
-version = "0.19.11"
+version = "0.21.3"
 description = "Package for GCP-specific Dagster framework op and resource components."
 optional = true
 python-versions = "*"
 files = [
-    {file = "dagster-gcp-0.19.11.tar.gz", hash = "sha256:d432d734faff3dbc94d85a5933ae70a5770bf72a4ef035107a010c9dadcbd7cc"},
-    {file = "dagster_gcp-0.19.11-py3-none-any.whl", hash = "sha256:156fcd1b5e849bdc73803079e7f65ca480c25fbfc8b51a20efd0b36c0110b665"},
+    {file = "dagster-gcp-0.21.3.tar.gz", hash = "sha256:e467a682acdaa61f6ceec3c60c5d63e8c213ff0b249181a1934a7b3bd2e8f019"},
+    {file = "dagster_gcp-0.21.3-py3-none-any.whl", hash = "sha256:cded6b1526fdb20839134b007a16d8fc74600750863327bf64996a47d98663e2"},
 ]
 
 [package.dependencies]
-dagster = "1.3.11"
-dagster-pandas = "0.19.11"
+dagster = "1.5.3"
+dagster-pandas = "0.21.3"
 db-dtypes = "*"
 google-api-python-client = "*"
 google-cloud-bigquery = "*"
@@ -434,37 +425,69 @@ pyarrow = ["pyarrow"]
 
 [[package]]
 name = "dagster-graphql"
-version = "1.3.11"
+version = "1.5.3"
 description = "The GraphQL frontend to python dagster."
 optional = false
 python-versions = "*"
 files = [
-    {file = "dagster-graphql-1.3.11.tar.gz", hash = "sha256:ff05df0bb0d89299250af090166f0a288530d1ac48ce16706b3aed10b44bc864"},
-    {file = "dagster_graphql-1.3.11-py3-none-any.whl", hash = "sha256:043d9d5493a6b74779a926fbdf5eb3f295dd8ccf8f0009173f2a7294ae846dba"},
+    {file = "dagster-graphql-1.5.3.tar.gz", hash = "sha256:e006ff9894894bf958c79e98cc1a5140047f6c1976503dac9585236a49634caf"},
+    {file = "dagster_graphql-1.5.3-py3-none-any.whl", hash = "sha256:0f734ba2a41802e40fc0f96e480b7a4dbab3f95390b18c443df78c770110a6ef"},
 ]
 
 [package.dependencies]
-dagster = "1.3.11"
+dagster = "1.5.3"
 gql = {version = ">=3.0.0", extras = ["requests"]}
 graphene = ">=3"
 requests = "*"
 starlette = "*"
-urllib3 = "<2.0.0"
 
 [[package]]
 name = "dagster-pandas"
-version = "0.19.11"
+version = "0.21.3"
 description = "Utilities and examples for working with pandas and dagster, an opinionated framework for expressing data pipelines"
 optional = true
 python-versions = "*"
 files = [
-    {file = "dagster-pandas-0.19.11.tar.gz", hash = "sha256:4db127b7fcdf08cd2d03da007549b022ca82c5757060b09ba7f721a2b37329de"},
-    {file = "dagster_pandas-0.19.11-py3-none-any.whl", hash = "sha256:f2f07cf8e246adfd11eef6d3bbe40fa79b4f61757fd035f9d14684037d0e5094"},
+    {file = "dagster-pandas-0.21.3.tar.gz", hash = "sha256:23ace9d918d72fb2a090bdc7fedaab2db3f1d426ef027b1f50d042acdc0d355b"},
+    {file = "dagster_pandas-0.21.3-py3-none-any.whl", hash = "sha256:a5f5596c32e1645f7a87cd719b3216769616471263a2022161b4aef05d275488"},
 ]
 
 [package.dependencies]
-dagster = "1.3.11"
+dagster = "1.5.3"
 pandas = "*"
+
+[[package]]
+name = "dagster-pipes"
+version = "1.5.3"
+description = "Toolkit for Dagster integrations with transform logic outside of Dagster"
+optional = false
+python-versions = "*"
+files = [
+    {file = "dagster-pipes-1.5.3.tar.gz", hash = "sha256:c4de5e0a2d9dc726755db4030976f4c6a2ab99a48a1c2b9b0f2118b76405cfff"},
+    {file = "dagster_pipes-1.5.3-py3-none-any.whl", hash = "sha256:6f54c6d88491b72b0b2c9f95807bd72b5b0044b4220fbcf94ddf8fa77315166b"},
+]
+
+[[package]]
+name = "dagster-webserver"
+version = "1.5.3"
+description = "Web UI for dagster."
+optional = false
+python-versions = "*"
+files = [
+    {file = "dagster_webserver-1.5.3-py3-none-any.whl", hash = "sha256:723c76767ce0a780a1ed17016a84c6e127a6751788415e796563fea6feaf96c6"},
+    {file = "dagster_webserver-1.5.3.tar.gz", hash = "sha256:25775667d0ae22773809223e2df85d1143813ed907d82ff2708855ba0498a123"},
+]
+
+[package.dependencies]
+click = ">=7.0,<9.0"
+dagster = "1.5.3"
+dagster-graphql = "1.5.3"
+starlette = "*"
+uvicorn = {version = "*", extras = ["standard"]}
+
+[package.extras]
+notebook = ["nbconvert"]
+test = ["starlette[full]"]
 
 [[package]]
 name = "db-dtypes"
@@ -1052,67 +1075,6 @@ test = ["objgraph", "psutil"]
 
 [[package]]
 name = "grpcio"
-version = "1.47.5"
-description = "HTTP/2-based RPC framework"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "grpcio-1.47.5-cp310-cp310-linux_armv7l.whl", hash = "sha256:acc73289d0c44650aa1f21eccfa967f5623b01c3b5e2b4596fe5f9c5bf10956d"},
-    {file = "grpcio-1.47.5-cp310-cp310-macosx_12_0_universal2.whl", hash = "sha256:f3174c798959998876d546944523a558f78a9b9feb22a2cbaaa3822f2e158653"},
-    {file = "grpcio-1.47.5-cp310-cp310-manylinux_2_17_aarch64.whl", hash = "sha256:64401ee6d54b4d5869bcba4be3cae9f2e335c44a39ba1e29991ad22cfe2abacb"},
-    {file = "grpcio-1.47.5-cp310-cp310-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:39a07eb5e7ec9277e5d124fb0e2d4f51ddbaadc2abdd27e8bbf1716dcf45e581"},
-    {file = "grpcio-1.47.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:874b138ca95a6375ae6f6a12c10a348827c9aa8fbd05d025b87b5e050ab55b46"},
-    {file = "grpcio-1.47.5-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:90539369afba42fc921cdda9d5f697a421f05a2e82ba58342ffbe88aa586019e"},
-    {file = "grpcio-1.47.5-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:2b18f970514bbc76547928e26d0cec06996ce3f947a3634b3adbe79d0e48e980"},
-    {file = "grpcio-1.47.5-cp310-cp310-win32.whl", hash = "sha256:44c52923be0c4a0f662de43644679c6356960c38c4edf44864c23b998693c7cc"},
-    {file = "grpcio-1.47.5-cp310-cp310-win_amd64.whl", hash = "sha256:07761f427551fced386db8c78701d6a167b2a682aa8df808303dd0a0d44bf6c9"},
-    {file = "grpcio-1.47.5-cp36-cp36m-linux_armv7l.whl", hash = "sha256:10eb026bf75568de06933366f0340d2b4b207425c74a5640aa1812b8b69e7d9d"},
-    {file = "grpcio-1.47.5-cp36-cp36m-macosx_10_10_universal2.whl", hash = "sha256:4f8e7fba6b1150a63aebd04d03be779de4ea4c4a8b28869e7a3c8f0b3ec59edc"},
-    {file = "grpcio-1.47.5-cp36-cp36m-manylinux_2_17_aarch64.whl", hash = "sha256:36d93b19c214bc654fc50ae65cce84b8f7698159191b9d3f21f9ad92ae7bc325"},
-    {file = "grpcio-1.47.5-cp36-cp36m-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:4e59f916bf58528e55893743151c6bd9f0a393fddfe411a6fffd29a300e6acf2"},
-    {file = "grpcio-1.47.5-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:18f8b2d316a3be464eb2a20afa7026a235a07a0094be879876611206d8026679"},
-    {file = "grpcio-1.47.5-cp36-cp36m-musllinux_1_1_i686.whl", hash = "sha256:0c3076957cd2aea34fe69384453315fd765948eb6cb73a12f332277308d04b76"},
-    {file = "grpcio-1.47.5-cp36-cp36m-musllinux_1_1_x86_64.whl", hash = "sha256:007f5ad07d2f3a4a422c1df589a0d25e918b96d8f6069cb6f0254386a5f09262"},
-    {file = "grpcio-1.47.5-cp36-cp36m-win32.whl", hash = "sha256:01ac149a5ca9512277b1d2fe85687099f3e442c6f9f924eae003a6700735e23e"},
-    {file = "grpcio-1.47.5-cp36-cp36m-win_amd64.whl", hash = "sha256:a32ccc88950f2be619157201161e70a5e5ed9e2427662bb2e60f1a8cea7d0db6"},
-    {file = "grpcio-1.47.5-cp37-cp37m-linux_armv7l.whl", hash = "sha256:ec71f15258e086acadb13ec06e4e4c54eb0f5455cd4c618997f847874d5ff9ea"},
-    {file = "grpcio-1.47.5-cp37-cp37m-macosx_10_10_universal2.whl", hash = "sha256:4bbf5a63497dbd5e44c4335cab153796a4274be17ca40ec971a7749c3f4fef6a"},
-    {file = "grpcio-1.47.5-cp37-cp37m-manylinux_2_17_aarch64.whl", hash = "sha256:11e1bc97e88232201256b718c63a8a1fd86ec6fca3a501293be5c5e423de9d56"},
-    {file = "grpcio-1.47.5-cp37-cp37m-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e568d84fed80713d2fa3221552beee27ed8034f7eff52bb7871bf5ffe4d4ca78"},
-    {file = "grpcio-1.47.5-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cb4c838de8e1e7194d3f9a679fd76cc44a1dbe81f18bd39ee233c72347d772bf"},
-    {file = "grpcio-1.47.5-cp37-cp37m-musllinux_1_1_i686.whl", hash = "sha256:a74c19baf2f8127b44b3f58e2a5801a17992dae9a20197b4a8fa26e2ea79742b"},
-    {file = "grpcio-1.47.5-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:e369ed5ecff11ef85666cabbb5736495604e052c8dc2c03a2104f99dfd0a59e3"},
-    {file = "grpcio-1.47.5-cp37-cp37m-win32.whl", hash = "sha256:ccb741fab5117aea981d4ac341d2ce1e588f515f83091807d4e2bb388ed59edd"},
-    {file = "grpcio-1.47.5-cp37-cp37m-win_amd64.whl", hash = "sha256:af9d3b075dfcbc343d44b0e98725ba6d56dc0669e61905a4e71e8f4409cfefbd"},
-    {file = "grpcio-1.47.5-cp38-cp38-linux_armv7l.whl", hash = "sha256:cac6847a4b9a7e7a1f270a71fef1c17c2e8a6b411c0ca48080ce1e08d284aded"},
-    {file = "grpcio-1.47.5-cp38-cp38-macosx_10_10_universal2.whl", hash = "sha256:54a3e17d155b6fb141e1fbb7c47d30556bec4c940b66ff4d9513536e2e214d4a"},
-    {file = "grpcio-1.47.5-cp38-cp38-manylinux_2_17_aarch64.whl", hash = "sha256:d1873c0b84a0ffb129f75e7c8be45d2cae427baf0b090d15b9ff46c1841c3f53"},
-    {file = "grpcio-1.47.5-cp38-cp38-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e209df91cf8dfb335c2e26784702b0e12c20dc4de7b9b6d2cccd968146155f06"},
-    {file = "grpcio-1.47.5-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:350e2627684f93f8b59af9c76a03eeb4aa145ecc589569137d4518486f4f1727"},
-    {file = "grpcio-1.47.5-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:23754807314c5aa4c26eb1c50aaf506801a2f7825951100280d2c013b127436f"},
-    {file = "grpcio-1.47.5-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:503c3fa0045f3ef80aa1ad082eac6a888081da2e1cd793f281ed499831e4c498"},
-    {file = "grpcio-1.47.5-cp38-cp38-win32.whl", hash = "sha256:a4eecfbe994c88996461bd1459e43ea460952d4147f53e8c18e089764e6808f5"},
-    {file = "grpcio-1.47.5-cp38-cp38-win_amd64.whl", hash = "sha256:941927ae4d589a2fef5c22b9c47df9e5e613c737bd750bafc3a9547cc506017c"},
-    {file = "grpcio-1.47.5-cp39-cp39-linux_armv7l.whl", hash = "sha256:9891c77e69bd4109c25c1bea51d78fbc5ba2fcd9445bf99225bb8fb03d849913"},
-    {file = "grpcio-1.47.5-cp39-cp39-macosx_10_10_universal2.whl", hash = "sha256:61e83778d85dbbbd7446451ec28b7261e9ebba489cc8c262dfe8fedc119f769b"},
-    {file = "grpcio-1.47.5-cp39-cp39-manylinux_2_17_aarch64.whl", hash = "sha256:21ccfc0e989531cbdc93c54a7581ea5f7c46bf585016d9320b4be042f1e02374"},
-    {file = "grpcio-1.47.5-cp39-cp39-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:bea35a0114a39827ffe59f73950d242f95d59a9ac2009ae8da7b065c06f0a57f"},
-    {file = "grpcio-1.47.5-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:97e75b9e52eeb9d1335aaeecf581cb3cea7fc4bafd7bd675c83f208a386a42a8"},
-    {file = "grpcio-1.47.5-cp39-cp39-musllinux_1_1_i686.whl", hash = "sha256:1fb86f95228827b55e860278d142326af4489c0f4220975780daff325fc87172"},
-    {file = "grpcio-1.47.5-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:c9b83183525afe58dd9e7bb249f9e55df326e3c3834d09ea476c7a6bb12f73ee"},
-    {file = "grpcio-1.47.5-cp39-cp39-win32.whl", hash = "sha256:00bff7492875ab04ec5ed3d92550d8f8aa423151e187b79684c8a22c7a6f1670"},
-    {file = "grpcio-1.47.5-cp39-cp39-win_amd64.whl", hash = "sha256:2b32adae820cc0347e5e44efe91b661b436dbca73f25c5763cadb1cafd1dca10"},
-    {file = "grpcio-1.47.5.tar.gz", hash = "sha256:b62b8bea0c94b4603bb4c8332d8a814375120bea3c2dbeb71397213bde5ea832"},
-]
-
-[package.dependencies]
-six = ">=1.5.2"
-
-[package.extras]
-protobuf = ["grpcio-tools (>=1.47.5)"]
-
-[[package]]
-name = "grpcio"
 version = "1.54.2"
 description = "HTTP/2-based RPC framework"
 optional = false
@@ -1170,21 +1132,6 @@ protobuf = ["grpcio-tools (>=1.54.2)"]
 
 [[package]]
 name = "grpcio-health-checking"
-version = "1.47.5"
-description = "Standard Health Checking Service for gRPC"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "grpcio-health-checking-1.47.5.tar.gz", hash = "sha256:74f36ef2ff704c46965bd74cdea51afc0bbcde641134c9d09ecb5063391db516"},
-    {file = "grpcio_health_checking-1.47.5-py3-none-any.whl", hash = "sha256:659b83138cb2b7db71777044d0caf58bab4f958fce972900f8577ebb4edca29d"},
-]
-
-[package.dependencies]
-grpcio = ">=1.47.5"
-protobuf = ">=3.12.0"
-
-[[package]]
-name = "grpcio-health-checking"
 version = "1.54.2"
 description = "Standard Health Checking Service for gRPC"
 optional = false
@@ -1197,22 +1144,6 @@ files = [
 [package.dependencies]
 grpcio = ">=1.54.2"
 protobuf = ">=4.21.6"
-
-[[package]]
-name = "grpcio-status"
-version = "1.47.5"
-description = "Status proto mapping for gRPC"
-optional = true
-python-versions = ">=3.6"
-files = [
-    {file = "grpcio-status-1.47.5.tar.gz", hash = "sha256:671bb4c0819697a699c12a8785a78d6847eafb6a83b2437bbae13989b04e5c25"},
-    {file = "grpcio_status-1.47.5-py3-none-any.whl", hash = "sha256:24549a84fa37ca5de1e0f6be96b4c2c3623b1e2b7359aa16b3de5aa0563795f1"},
-]
-
-[package.dependencies]
-googleapis-common-protos = ">=1.5.5"
-grpcio = ">=1.47.5"
-protobuf = ">=3.12.0"
 
 [[package]]
 name = "grpcio-status"
@@ -3080,4 +3011,4 @@ gcp = ["dagster-gcp"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "2aef176f292c9665981752c32c0054c7f5ab5a252753ebbf84d4bfccfee85b3d"
+content-hash = "c95cc62cc466446ca9dbefee4b22824f0a1271c701533204f1fa2a8fb4d4f03a"
