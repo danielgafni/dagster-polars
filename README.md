@@ -57,10 +57,10 @@ Complete description of `dagster_polars` behavior for all supported type annotat
 | `LazyFrameWithMetadata` | read LazyFrame and metadata. Raise error if it's not found in storage.                                                                                                                                                |
 | `Optional[DataFrameWithMetadata]` | read/write DataFrame and metadata. Skip if it's not found in storage or the output is `None`.                                                                                                                         |
 | `Optional[LazyFrameWithMetadata]` | read LazyFrame and metadata. Skip if it's not found in storage.                                                                                                                                                       |
-| `DataFramePartitions` | read multiple DataFrames as `Dict[str, DataFrame]`. Raise an error if any of thems is not found in storage, unlesee `"allow_missing_partitions"` input metadata is set to `True`                                      |
-| `LazyFramePartitions` | read multiple LazyFrames as `Dict[str, LazyFrame]`. Raise an error if any of thems is not found in storage, unlesee `"allow_missing_partitions"` input metadata is set to `True`                                      |
-| `DataFramePartitionsWithMetadata` | read multiple DataFrames and metadata as `Dict[str, Tuple[DataFrame, StorageMetadata]]`. Raise an error if any of thems is not found in storage, unlesee `"allow_missing_partitions"` input metadata is set to `True` |
-| `LazyFramePartitionsWithMetadata` | read multiple LazyFrames and metadata as `Dict[str, Tuple[LazyFrame, StorageMetadata]]`. Raise an error if any of thems is not found in storage, unlesee `"allow_missing_partitions"` input metadata is set to `True` |
+| `DataFramePartitions` | read multiple DataFrames as `Dict[str, DataFrame]`. Raise an error if any of thems is not found in storage, unless `"allow_missing_partitions"` input metadata is set to `True`                                      |
+| `LazyFramePartitions` | read multiple LazyFrames as `Dict[str, LazyFrame]`. Raise an error if any of thems is not found in storage, unless `"allow_missing_partitions"` input metadata is set to `True`                                      |
+| `DataFramePartitionsWithMetadata` | read multiple DataFrames and metadata as `Dict[str, Tuple[DataFrame, StorageMetadata]]`. Raise an error if any of thems is not found in storage, unless `"allow_missing_partitions"` input metadata is set to `True` |
+| `LazyFramePartitionsWithMetadata` | read multiple LazyFrames and metadata as `Dict[str, Tuple[LazyFrame, StorageMetadata]]`. Raise an error if any of thems is not found in storage, unless `"allow_missing_partitions"` input metadata is set to `True` |
 
 Generic builtins (like `tuple[...]` instead of `Tuple[...]`) are supported for Python >= 3.9.
 
