@@ -10,7 +10,10 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 
-[Polars](https://github.com/pola-rs/polars) integration library for [Dagster](https://github.com/dagster-io/dagster). It allows using Polars DataFrames inputs and outputs for Dagster's `@asset` or `@op`, allows using type annotations to control weather to load and eager or lazy DataFrame, supports multiple serialization formats and storages, and is rigiously tested against multiple combinations of Python, Dagster and Polars versions.
+[Polars](https://github.com/pola-rs/polars) integration library for [Dagster](https://github.com/dagster-io/dagster).
+
+
+Allows having Polars DataFrames as inputs/outputs for Dagster's `@asset` and `@op`, using type annotations to control whether to load an eager or lazy DataFrame, supports multiple serialization formats and storages, and is rigiously tested against multiple combinations of Python, Dagster and Polars versions.
 
 # Installation
 
