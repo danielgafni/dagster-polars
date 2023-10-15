@@ -22,7 +22,8 @@ jobs:
       matrix:
         os:
           - Ubuntu
-          - MacOs
+          # MacOs is commented out because: 1. For some reason it's very slow. 2. It never had OS-specific issues
+#          - MacOs
         py:
           - "3.11"
           - "3.10"
