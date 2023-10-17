@@ -25,6 +25,7 @@ jobs:
           # MacOs is commented out because: 1. For some reason it's very slow. 2. It never had OS-specific issues
 #          - MacOs
         py:
+          - "3.12"
           - "3.11"
           - "3.10"
           - "3.9"
@@ -67,6 +68,7 @@ jobs:
         os:
           - Ubuntu
         py:
+          - "3.12"
           - "3.11"
           - "3.10"
           - "3.9"
