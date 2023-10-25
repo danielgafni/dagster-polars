@@ -54,8 +54,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         df.write_delta(
             str(path),
-            mode=context.metadata.get("mode", self.mode),  # type: ignore
-            overwrite_schema=context.metadata.get("overwrite_schema", self.overwrite_schema),
+            mode=self.mode or context.metadata.get("mode"),  # type: ignore
+            overwrite_schema=self.overwrite_schema or bool(context.metadata.get("overwrite_schema", False)),
             storage_options=storage_options,
             delta_write_options=delta_write_options,
         )
@@ -65,7 +65,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     def scan_df_from_path(self, path: UPath, context: InputContext) -> pl.LazyFrame:
         assert context.metadata is not None
 
-        version_override = context.metadata.get("version") or self.version or None
+        version_override = self.version or context.metadata.get("version") or None
 
         version = DeltaTable(
             str(path),
