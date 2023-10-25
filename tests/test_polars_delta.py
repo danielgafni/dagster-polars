@@ -230,7 +230,7 @@ def test_polars_delta_time_travel(polars_delta_io_manager: PolarsDeltaIOManager,
 
     # get_saved_path(result, "upstream")
 
-    @asset(ins={"upstream": AssetIn(metadata={"version": "0"})})
+    @asset(ins={"upstream": AssetIn(metadata={"version": 0})})
     def downstream_0(upstream: pl.DataFrame) -> None:
         assert upstream["foo"].head(1).item() == "a"
 
