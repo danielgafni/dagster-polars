@@ -46,7 +46,7 @@ jobs:
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.2
+          version: 1.6.1
           virtualenvs-create: false
           virtualenvs-in-project: false
           installer-parallel: true
@@ -89,7 +89,7 @@ jobs:
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.2
+          version: 1.6.1
           virtualenvs-create: false
           virtualenvs-in-project: false
           installer-parallel: true
@@ -114,7 +114,7 @@ jobs:
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.2
+          version: 1.6.1
           virtualenvs-create: false
           virtualenvs-in-project: false
           installer-parallel: true
