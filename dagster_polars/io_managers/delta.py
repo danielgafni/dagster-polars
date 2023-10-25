@@ -65,9 +65,16 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     def scan_df_from_path(self, path: UPath, context: InputContext) -> pl.LazyFrame:
         assert context.metadata is not None
 
+        version = context.metadata.get("version") or self.version or None
+        if version is None:
+            table = DeltaTable(str(path), storage_options=self.get_storage_options(path))
+            version = table.version()
+
+        context.log.debug(f"Reading Delta table with version: {version}")
+
         return pl.scan_delta(
             str(path),
-            version=context.metadata.get("version") or self.version or None,
+            version=version,
             delta_table_options=context.metadata.get("delta_table_options"),
             pyarrow_options=context.metadata.get("pyarrow_options"),
             storage_options=self.get_storage_options(path),
