@@ -5,7 +5,16 @@ from typing import Dict
 import polars as pl
 import polars.testing as pl_testing
 import pytest
-from dagster import DagsterInstance, OpExecutionContext, StaticPartitionsDefinition, asset, materialize
+from dagster import (
+    AssetIn,
+    Config,
+    DagsterInstance,
+    OpExecutionContext,
+    RunConfig,
+    StaticPartitionsDefinition,
+    asset,
+    materialize,
+)
 from deltalake import DeltaTable
 from hypothesis import given, settings
 from polars.testing.parametric import dataframes
@@ -202,4 +211,43 @@ def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIO
             upstream_partitioned.to_source_asset(),
             downstream_load_multiple_partitions,
         ],
+    )
+
+
+def test_polars_delta_time_travel(polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame):
+    manager = polars_delta_io_manager
+    df = df_for_delta
+
+    class UpstreamConfig(Config):
+        foo: str
+
+    @asset(io_manager_def=manager)
+    def upstream(context: OpExecutionContext, config: UpstreamConfig) -> pl.DataFrame:
+        return df.with_columns(pl.lit(config.foo).alias("foo"))
+
+    for foo in ["a", "b"]:
+        materialize([upstream], run_config=RunConfig(ops={"upstream": UpstreamConfig(foo=foo)}))
+
+    # get_saved_path(result, "upstream")
+
+    @asset(ins={"upstream": AssetIn(metadata={"version": 0})})
+    def downstream_0(upstream: pl.DataFrame) -> None:
+        assert upstream["foo"].head(1).item() == "a"
+
+    materialize(
+        [
+            upstream.to_source_asset(),
+            downstream_0,
+        ]
+    )
+
+    @asset(ins={"upstream": AssetIn(metadata={"version": "1"})})
+    def downstream_1(upstream: pl.DataFrame) -> None:
+        assert upstream["foo"].head(1).item() == "b"
+
+    materialize(
+        [
+            upstream.to_source_asset(),
+            downstream_1,
+        ]
     )

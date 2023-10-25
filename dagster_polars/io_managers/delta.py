@@ -54,8 +54,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         df.write_delta(
             str(path),
-            mode=context.metadata.get("mode", self.mode),  # type: ignore
-            overwrite_schema=context.metadata.get("overwrite_schema", self.overwrite_schema),
+            mode=context.metadata.get("mode") or self.mode,  # type: ignore
+            overwrite_schema=context.metadata.get("overwrite_schema") or self.overwrite_schema,
             storage_options=storage_options,
             delta_write_options=delta_write_options,
         )
@@ -65,9 +65,35 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     def scan_df_from_path(self, path: UPath, context: InputContext) -> pl.LazyFrame:
         assert context.metadata is not None
 
+        version_from_metadata = context.metadata.get("version")
+        version_from_config = self.version
+
+        version: Optional[int] = None
+
+        if version_from_metadata is not None and version_from_config is not None:
+            context.log.warning(
+                f"Both version from metadata ({version_from_metadata}) "
+                f"and config ({version_from_config}) are set. Using version from metadata."
+            )
+            version = int(version_from_metadata)
+        elif version_from_metadata is None and version_from_config is not None:
+            version = int(version_from_config)
+        elif version_from_metadata is not None and version_from_config is None:
+            version = int(version_from_metadata)
+
+        version = DeltaTable(
+            str(path),
+            storage_options=self.get_storage_options(path),
+            version=version,
+        ).version()
+
+        assert version is not None, "DeltaTable version is None. This should not happen."
+
+        context.log.debug(f"Reading Delta table with version: {version}")
+
         return pl.scan_delta(
             str(path),
-            version=context.metadata.get("version") or self.version or None,
+            version=version,
             delta_table_options=context.metadata.get("delta_table_options"),
             pyarrow_options=context.metadata.get("pyarrow_options"),
             storage_options=self.get_storage_options(path),
