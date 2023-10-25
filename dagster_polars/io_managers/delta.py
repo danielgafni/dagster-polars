@@ -65,19 +65,21 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     def scan_df_from_path(self, path: UPath, context: InputContext) -> pl.LazyFrame:
         assert context.metadata is not None
 
-        version_override = self.version or context.metadata.get("version") or None
+        version_override = (
+            self.version or context.metadata.get("version") if context.metadata.get("version") is not None else None
+        )
 
         version = DeltaTable(
             str(path),
             storage_options=self.get_storage_options(path),
-            version=int(version_override) if version_override else None,
+            version=int(version_override) if version_override is not None else None,
         ).version()
 
         context.log.debug(f"Reading Delta table with version: {version}")
 
         return pl.scan_delta(
             str(path),
-            version=int(version) if version else None,
+            version=int(version) if version is not None else None,
             delta_table_options=context.metadata.get("delta_table_options"),
             pyarrow_options=context.metadata.get("pyarrow_options"),
             storage_options=self.get_storage_options(path),
