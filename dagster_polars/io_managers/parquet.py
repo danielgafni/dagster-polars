@@ -5,6 +5,7 @@ import fsspec
 import polars as pl
 import pyarrow as pa
 import pyarrow.parquet
+import pyarrow.dataset
 from dagster import InputContext, OutputContext
 from pyarrow import Table
 from upath import UPath
