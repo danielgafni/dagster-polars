@@ -32,7 +32,7 @@ jobs:
           - "3.8"
         dagster_version:
           - "1.4.0"
-          - "1.5.0"
+            # - "1.5.0" disabled until https://github.com/dagster-io/dagster/issues/17436 is fixed
         polars_version:
           - "0.17.0"
           - "0.18.0"
@@ -74,7 +74,7 @@ jobs:
           - "3.8"
         dagster_version:
           - "1.4.0"
-          - "1.5.0"
+            # - "1.5.0" disabled until https://github.com/dagster-io/dagster/issues/17436 is fixed
         polars_version:
           - "0.17.0"
           - "0.18.0"
