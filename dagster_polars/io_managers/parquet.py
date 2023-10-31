@@ -4,6 +4,7 @@ from typing import Optional, Union
 import fsspec
 import polars as pl
 import pyarrow as pa
+import pyarrow.dataset
 import pyarrow.parquet
 from dagster import InputContext, OutputContext
 from pyarrow import Table
