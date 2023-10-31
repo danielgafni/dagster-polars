@@ -1,7 +1,15 @@
-from dagster_polars._version import __version__
-from dagster_polars.io_managers.base import BasePolarsUPathIOManager
-from dagster_polars.io_managers.parquet import PolarsParquetIOManager
-from dagster_polars.types import (
+import lazy_import  # noqa
+
+lazy_import.lazy_module("dagster_polars.io_managers.parquet")  # noqa
+lazy_import.lazy_module("dagster_polars.io_managers.delta")  # noqa
+lazy_import.lazy_module("dagster_polars.io_managers.bigquery")  # noqa
+
+from dagster_polars._version import __version__  # noqa
+from dagster_polars.io_managers.base import BasePolarsUPathIOManager  # noqa
+from dagster_polars.io_managers.bigquery import BigQueryPolarsIOManager  # noqa
+from dagster_polars.io_managers.delta import DeltaWriteMode, PolarsDeltaIOManager  # noqa
+from dagster_polars.io_managers.parquet import PolarsParquetIOManager  # noqa
+from dagster_polars.types import (  # noqa
     DataFramePartitions,
     DataFramePartitionsWithMetadata,
     DataFrameWithMetadata,
@@ -12,8 +20,11 @@ from dagster_polars.types import (
 )
 
 __all__ = [
-    "PolarsParquetIOManager",
     "BasePolarsUPathIOManager",
+    "PolarsParquetIOManager",
+    "PolarsDeltaIOManager",
+    "DeltaWriteMode",
+    "BigQueryPolarsIOManager",
     "StorageMetadata",
     "DataFrameWithMetadata",
     "LazyFrameWithMetadata",
@@ -23,19 +34,3 @@ __all__ = [
     "LazyFramePartitionsWithMetadata",
     "__version__",
 ]
-
-
-try:
-    from dagster_polars.io_managers.delta import DeltaWriteMode, PolarsDeltaIOManager  # noqa
-
-    __all__.extend(["DeltaWriteMode", "PolarsDeltaIOManager"])
-except ImportError:
-    pass
-
-
-try:
-    from dagster_polars.io_managers.bigquery import BigQueryPolarsIOManager  # noqa
-
-    __all__.extend(["BigQueryPolarsIOManager"])
-except ImportError:
-    pass
