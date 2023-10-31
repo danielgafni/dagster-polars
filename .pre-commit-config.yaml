@@ -21,14 +21,14 @@ repos:
 #        entry: pyupgrade --py38-plus
   - repo: local
     hooks:
-      - id: ruff
-        name: ruff
-        entry: ruff --fix .
+      - id: lint
+        name: ruff check
+        entry: ruff check --fix --diff .
         language: system
         pass_filenames: false
       - id: format
-        name: format
-        entry: ruff format .
+        name: format format
+        entry: ruff format --diff .
         language: system
         pass_filenames: false
       - id: black-docs
