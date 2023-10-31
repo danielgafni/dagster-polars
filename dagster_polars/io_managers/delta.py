@@ -1,17 +1,19 @@
 from enum import Enum
 from pprint import pformat
-from typing import Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
+import lazy_import
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
-
-try:
-    from deltalake import DeltaTable
-except ImportError as e:
-    raise ImportError("Install 'dagster-polars[deltalake]' to use DeltaLake functionality") from e
 from upath import UPath
 
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
+
+lazy_import.lazy_module("deltalake")
+
+
+if TYPE_CHECKING:
+    from deltalake import DeltaTable
 
 
 class DeltaWriteMode(str, Enum):

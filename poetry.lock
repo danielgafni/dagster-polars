@@ -1591,7 +1591,7 @@ setuptools = "*"
 name = "numpy"
 version = "1.24.3"
 description = "Fundamental package for array computing in Python"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "numpy-1.24.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:3c1104d3c036fb81ab923f507536daedc718d0ad5a8707c6061cdfd6d184e570"},
@@ -1928,7 +1928,7 @@ test = ["enum34", "ipaddress", "mock", "pywin32", "wmi"]
 name = "pyarrow"
 version = "12.0.0"
 description = "Python library for Apache Arrow"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "pyarrow-12.0.0-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:3b97649c8a9a09e1d8dc76513054f1331bd9ece78ee39365e6bf6bc7503c1e94"},
@@ -3005,8 +3005,9 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [extras]
 deltalake = ["deltalake"]
 gcp = ["dagster-gcp"]
+pyarrow = ["pyarrow"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "012e1c424a3888946cdd96a91c2024795772d376757378d5b4fadd925ba6c151"
+content-hash = "8447f2a4be7afe2598f71d2d852406c2c98e4927fec6c00992bd7d15db05cc67"

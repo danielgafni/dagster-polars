@@ -1,18 +1,19 @@
-from typing import Optional, Sequence, Type
+from typing import TYPE_CHECKING, Optional, Sequence, Type
 
+import lazy_import
 import polars as pl
 from dagster import InputContext, OutputContext
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
-try:
-    from dagster_gcp.bigquery.io_manager import BigQueryClient, BigQueryIOManager
-    from google.cloud import bigquery as bigquery
-except ImportError as e:
-    raise ImportError("Install 'dagster-polars[gcp]' to use BigQuery functionality") from e
 from dagster_polars.io_managers.utils import get_polars_metadata
 
-# The code below is mostly copied from `dagster-gcp-pandas`
-# with a few improvements
+lazy_import.lazy_module("google.cloud")
+lazy_import.lazy_module("dagster_gcp.bigquery.io_manager")
+
+
+if TYPE_CHECKING:
+    from dagster_gcp.bigquery.io_manager import BigQueryClient, BigQueryIOManager
+    from google.cloud import bigquery as bigquery
 
 
 class BigQueryPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):

@@ -29,15 +29,16 @@ license = "Apache-2.0"
 python = "^3.8"
 dagster = "^1.4.0"
 polars = ">=0.17.0"
-pyarrow = ">=8.0.0"
 typing-extensions = "^4.7.1"
+lazy-import = "^0.2.2"
 
+pyarrow = { version = ">=8.0.0", optional = true }
 deltalake = { version = ">=0.10.0", optional = true }
 dagster-gcp = { version = ">=0.19.5", optional = true }
-lazy-import = "^0.2.2"
 
 
 [tool.poetry.extras]
+pyarrow = ["pyarrow"]
 gcp = ["dagster-gcp"]
 deltalake = ["deltalake"]
 

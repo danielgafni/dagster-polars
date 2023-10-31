@@ -1,10 +1,9 @@
 import json
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import fsspec
+import lazy_import
 import polars as pl
-import pyarrow as pa
-import pyarrow.parquet
 from dagster import InputContext, OutputContext
 from pyarrow import Table
 from upath import UPath
@@ -12,6 +11,14 @@ from upath import UPath
 from dagster_polars.constants import DAGSTER_POLARS_STORAGE_METADATA_KEY
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 from dagster_polars.types import LazyFrameWithMetadata, StorageMetadata
+
+lazy_import.lazy_module("pyarrow")
+lazy_import.lazy_module("pyarrow.parquet")
+
+
+if TYPE_CHECKING:
+    import pyarrow as pa
+    import pyarrow.parquet
 
 
 class PolarsParquetIOManager(BasePolarsUPathIOManager):
