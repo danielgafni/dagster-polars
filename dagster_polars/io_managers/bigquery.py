@@ -7,6 +7,7 @@ from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
 from dagster_polars.io_managers.utils import get_polars_metadata
 
+lazy_import.lazy_module("dagster_gcp")
 lazy_import.lazy_module("google.cloud.bigquery")
 lazy_import.lazy_module("dagster_gcp.bigquery.io_manager")
 
