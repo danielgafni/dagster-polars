@@ -16,7 +16,7 @@ on:
 
 jobs:
   test:
-    name: test ${{ matrix.py }} - ${{ matrix.os }} - polars=${{ matrix.polars_version }} - dagster=${{ matrix.dagster_version }}
+    name: test polars=${{ matrix.polars_version }} dagster=${{ matrix.dagster_version }} py=${{ matrix.py }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
@@ -60,7 +60,7 @@ jobs:
         run: pytest -v .
 
   lint:
-    name: lint ${{ matrix.py }} - ${{ matrix.os }} - polars=${{ matrix.polars_version }} - dagster=${{ matrix.dagster_version }}
+    name: lint polars=${{ matrix.polars_version }} dagster=${{ matrix.dagster_version }} py=${{ matrix.py }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false

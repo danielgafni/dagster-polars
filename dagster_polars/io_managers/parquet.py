@@ -73,9 +73,7 @@ def scan_parquet(path: UPath, context: InputContext) -> pl.LazyFrame:
         # TODO: explore removing this as universal-pathlib should always provide storage_options in newer versions
         pass
 
-    return pl.scan_parquet(
-        str(path),
-        storage_options=storage_options,
+    kwargs = dict(
         n_rows=context.metadata.get("n_rows", None),
         cache=context.metadata.get("cache", True),
         parallel=context.metadata.get("parallel", "auto"),
@@ -84,9 +82,13 @@ def scan_parquet(path: UPath, context: InputContext) -> pl.LazyFrame:
         row_count_offset=context.metadata.get("row_count_offset", 0),
         low_memory=context.metadata.get("low_memory", False),
         use_statistics=context.metadata.get("use_statistics", True),
-        hive_partitioning=context.metadata.get("hive_partitioning", True),
-        retries=context.metadata.get("retries", 0),
     )
+
+    if Version(pl.__version__) > Version("0.19.4"):
+        kwargs["hive_partitioning"] = context.metadata.get("hive_partitioning", True)
+        kwargs["retries"] = context.metadata.get("retries", 0)
+
+    return pl.scan_parquet(str(path), storage_options=storage_options, **kwargs)  # type: ignore
 
 
 class PolarsParquetIOManager(BasePolarsUPathIOManager):
