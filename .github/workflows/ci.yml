@@ -51,13 +51,11 @@ jobs:
           virtualenvs-in-project: false
           installer-parallel: true
       - name: Install dependencies
-        run: poetry install --all-extras --sync && pip install --ignore-installed --force-reinstall polars~=${{ matrix.polars_version }} dagster~=${{ matrix.dagster_version }}
+        run: poetry install --all-extras --sync && pip install --force-reinstall polars~=${{ matrix.polars_version }} dagster~=${{ matrix.dagster_version }}
       - name: Print polars info
         run: python -c 'import polars; print(polars.show_versions())'
       - name: Print dagster info
         run: python -c 'import dagster; print(dagster.__version__)'
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
       - name: Run tests
         run: pytest -v .
 
@@ -95,7 +93,7 @@ jobs:
           virtualenvs-in-project: false
           installer-parallel: true
       - name: Install dependencies
-        run: poetry install --all-extras --sync && pip install --ignore-installed --force-reinstall polars~=${{ matrix.polars_version }} dagster~=${{ matrix.dagster_version }}
+        run: poetry install --all-extras --sync && pip install --force-reinstall polars~=${{ matrix.polars_version }} dagster~=${{ matrix.dagster_version }}
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
 
