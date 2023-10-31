@@ -1,8 +1,9 @@
 import lazy_import  # noqa
 
-lazy_import.lazy_module("dagster_polars.io_managers.parquet")  # noqa
-lazy_import.lazy_module("dagster_polars.io_managers.delta")  # noqa
-lazy_import.lazy_module("dagster_polars.io_managers.bigquery")  # noqa
+lazy_import.lazy_callable("dagster_polars.io_managers.parquet.BigQueryPolarsIOManager")  # noqa
+lazy_import.lazy_callable("dagster_polars.io_managers.delta.PolarsDeltaIOManager")  # noqa
+lazy_import.lazy_callable("dagster_polars.io_managers.delta.PolarsDeltaIOManager")  # noqa
+lazy_import.lazy_callable("dagster_polars.io_managers.bigquery.BigQueryPolarsIOManager")  # noqa
 
 from dagster_polars._version import __version__  # noqa
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager  # noqa
