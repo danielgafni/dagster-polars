@@ -107,7 +107,7 @@ jobs:
 #        run: echo "Success!"
 
   publish:
-    needs: [success]
+    needs: [test, lint]
     if: contains(github.ref, 'refs/tags/')
     name: Publish to PyPI
     strategy:
