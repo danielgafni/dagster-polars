@@ -26,6 +26,7 @@ jobs:
           # MacOs is commented out because: 1. For some reason it's very slow. 2. It never had OS-specific issues
 #          - MacOs
         py:
+          - "3.12"
           - "3.11"
           - "3.10"
           - "3.9"
@@ -46,7 +47,7 @@ jobs:
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.2
+          version: 1.6.1
           virtualenvs-create: false
           virtualenvs-in-project: false
           installer-parallel: true
@@ -68,6 +69,7 @@ jobs:
         os:
           - Ubuntu
         py:
+          - "3.12"
           - "3.11"
           - "3.10"
           - "3.9"
@@ -88,7 +90,7 @@ jobs:
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.2
+          version: 1.6.1
           virtualenvs-create: false
           virtualenvs-in-project: false
           installer-parallel: true
@@ -97,8 +99,16 @@ jobs:
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
 
-  publish:
+  qa_success:
+    name: QA Success
     needs: [test, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Success
+        run: echo "Success!"
+
+  publish:
+    needs: qa_success
     if: contains(github.ref, 'refs/tags/')
     name: Publish to PyPI
     strategy:
@@ -113,7 +123,7 @@ jobs:
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.2
+          version: 1.6.1
           virtualenvs-create: false
           virtualenvs-in-project: false
           installer-parallel: true
