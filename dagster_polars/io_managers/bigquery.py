@@ -3,9 +3,12 @@ from typing import Optional, Sequence, Type
 import polars as pl
 from dagster import InputContext, OutputContext
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_gcp.bigquery.io_manager import BigQueryClient, BigQueryIOManager
-from google.cloud import bigquery as bigquery
 
+try:
+    from dagster_gcp.bigquery.io_manager import BigQueryClient, BigQueryIOManager
+    from google.cloud import bigquery as bigquery
+except ImportError as e:
+    raise ImportError("Install 'dagster-polars[gcp]' to use BigQuery functionality") from e
 from dagster_polars.io_managers.utils import get_polars_metadata
 
 # The code below is mostly copied from `dagster-gcp-pandas`

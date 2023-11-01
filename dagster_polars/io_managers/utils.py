@@ -70,13 +70,12 @@ def get_metadata_table_and_schema(
     try:
         # this can fail sometimes
         # because TableRecord doesn't support all python types
+        df_sample_dict = df_sample.to_dicts()
         table = MetadataValue.table(
             records=[
                 TableRecord(
                     {
-                        col: cast_polars_single_value_to_dagster_table_types(  # type: ignore
-                            df_sample.to_dicts()[i][col]
-                        )
+                        col: cast_polars_single_value_to_dagster_table_types(df_sample_dict[i][col])  # type: ignore
                         for col in df.columns
                     }
                 )
