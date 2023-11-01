@@ -99,12 +99,12 @@ jobs:
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
 
-  qa_success:
-    needs: [test, lint]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Success
-        run: echo "Success!"
+#  qa_success:
+#    needs: [test, lint]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Success
+#        run: echo "Success!"
 
   publish:
     needs: [success]
