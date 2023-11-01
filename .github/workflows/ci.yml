@@ -103,7 +103,8 @@ jobs:
     needs: [test, lint]
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Success!"
+      - name: Success
+        run: echo "Success!"
 
   publish:
     needs: [success]
