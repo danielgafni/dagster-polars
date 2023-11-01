@@ -32,7 +32,7 @@ jobs:
           - "3.8"
         dagster_version:
           - "1.4.0"
-            # - "1.5.0" disabled until https://github.com/dagster-io/dagster/issues/17436 is fixed
+          - "1.5.0"
         polars_version:
           - "0.17.0"
           - "0.18.0"
@@ -51,7 +51,9 @@ jobs:
           virtualenvs-in-project: false
           installer-parallel: true
       - name: Install dependencies
-        run: poetry install --all-extras --sync && pip install --force-reinstall polars~=${{ matrix.polars_version }} dagster~=${{ matrix.dagster_version }}
+        run: poetry install --all-extras --sync
+      - name: Install matrix overrides
+        run: poetry add polars=~${{ matrix.polars_version }} dagster=~${{ matrix.dagster_version }}&& poetry install --sync --all-extras
       - name: Print polars info
         run: python -c 'import polars; print(polars.show_versions())'
       - name: Print dagster info
@@ -74,7 +76,7 @@ jobs:
           - "3.8"
         dagster_version:
           - "1.4.0"
-            # - "1.5.0" disabled until https://github.com/dagster-io/dagster/issues/17436 is fixed
+          - "1.5.0"
         polars_version:
           - "0.17.0"
           - "0.18.0"
@@ -93,7 +95,9 @@ jobs:
           virtualenvs-in-project: false
           installer-parallel: true
       - name: Install dependencies
-        run: poetry install --all-extras --sync && pip install --force-reinstall polars~=${{ matrix.polars_version }} dagster~=${{ matrix.dagster_version }}
+        run: poetry install --all-extras --sync
+      - name: Install matrix overrides
+        run: poetry add polars=~${{ matrix.polars_version }} dagster=~${{ matrix.dagster_version }} && poetry install --sync --all-extras
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
 
