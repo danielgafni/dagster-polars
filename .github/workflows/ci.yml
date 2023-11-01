@@ -99,15 +99,16 @@ jobs:
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
 
-#  qa_success:
-#    needs: [test, lint]
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Success
-#        run: echo "Success!"
+  qa_success:
+    name: QA Success
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Success
+        run: echo "Success!"
 
   publish:
-    needs: [test, lint]
+    needs: qa_success
     if: contains(github.ref, 'refs/tags/')
     name: Publish to PyPI
     strategy:
