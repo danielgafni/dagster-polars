@@ -59,7 +59,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             storage_options=storage_options,
             delta_write_options=delta_write_options,
         )
-        table = DeltaTable(str(path), storage_options=storage_options)
+        table = DeltaTable(str(path), storage_options=storage_options or None)
         context.add_output_metadata({"version": table.version()})
 
     def scan_df_from_path(self, path: UPath, context: InputContext) -> pl.LazyFrame:
@@ -83,7 +83,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         version = DeltaTable(
             str(path),
-            storage_options=self.get_storage_options(path),
+            storage_options=self.get_storage_options(path) or None,
             version=version,
         ).version()
 
@@ -144,7 +144,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 path = self._get_path(context)
                 # we need to get row_count from the full table
                 metadata["row_count"] = MetadataValue.int(
-                    DeltaTable(str(path), storage_options=self.get_storage_options(path))
+                    DeltaTable(str(path), storage_options=self.get_storage_options(path) or None)
                     .to_pyarrow_dataset()
                     .count_rows()
                 )

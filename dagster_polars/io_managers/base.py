@@ -230,7 +230,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         storage_options = {}
 
         try:
-            storage_options.update(path._kwargs.copy())
+            storage_options.update(path.storage_options.copy())
         except AttributeError:
             pass
 
