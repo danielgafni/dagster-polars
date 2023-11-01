@@ -1,11 +1,13 @@
 import json
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import fsspec
 import polars as pl
 import pyarrow as pa
+import pyarrow.dataset
 import pyarrow.parquet
 from dagster import InputContext, OutputContext
+from packaging.version import Version
 from pyarrow import Table
 from upath import UPath
 
@@ -14,8 +16,84 @@ from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 from dagster_polars.types import LazyFrameWithMetadata, StorageMetadata
 
 
+def get_pyarrow_dataset(path: UPath, context: InputContext) -> pyarrow.dataset.Dataset:
+    assert context.metadata is not None
+
+    fs: Union[fsspec.AbstractFileSystem, None] = None
+
+    try:
+        fs = path._accessor._fs
+    except AttributeError:
+        pass
+
+    ds = pyarrow.dataset.dataset(
+        str(path),
+        filesystem=fs,
+        format=context.metadata.get("format", "parquet"),
+        partitioning=context.metadata.get("partitioning"),
+        partition_base_dir=context.metadata.get("partition_base_dir"),
+        exclude_invalid_files=context.metadata.get("exclude_invalid_files", True),
+        ignore_prefixes=context.metadata.get("ignore_prefixes", [".", "_"]),
+    )
+
+    return ds
+
+
+def scan_parquet_legacy(path: UPath, context: InputContext) -> pl.LazyFrame:
+    """
+    Scan a parquet file and return a lazy frame. Uses pyarrow.
+    :param path:
+    :param context:
+    :return:
+    """
+    assert context.metadata is not None
+
+    ldf = pl.scan_pyarrow_dataset(
+        get_pyarrow_dataset(path, context),
+        allow_pyarrow_filter=context.metadata.get("allow_pyarrow_filter", True),
+    )
+
+    return ldf
+
+
+def scan_parquet(path: UPath, context: InputContext) -> pl.LazyFrame:
+    """
+    Scan a parquet file and return a lazy frame. Uses polars native reader.
+    :param path:
+    :param context:
+    :return:
+    """
+    assert context.metadata is not None
+
+    storage_options: Optional[dict[str, Any]] = None
+
+    try:
+        storage_options = path.storage_options
+    except AttributeError:
+        # TODO: explore removing this as universal-pathlib should always provide storage_options in newer versions
+        pass
+
+    kwargs = dict(
+        n_rows=context.metadata.get("n_rows", None),
+        cache=context.metadata.get("cache", True),
+        parallel=context.metadata.get("parallel", "auto"),
+        rechunk=context.metadata.get("rechunk", True),
+        row_count_name=context.metadata.get("row_count_name", None),
+        row_count_offset=context.metadata.get("row_count_offset", 0),
+        low_memory=context.metadata.get("low_memory", False),
+        use_statistics=context.metadata.get("use_statistics", True),
+    )
+
+    if Version(pl.__version__) > Version("0.19.4"):
+        kwargs["hive_partitioning"] = context.metadata.get("hive_partitioning", True)
+        kwargs["retries"] = context.metadata.get("retries", 0)
+
+    return pl.scan_parquet(str(path), storage_options=storage_options, **kwargs)  # type: ignore
+
+
 class PolarsParquetIOManager(BasePolarsUPathIOManager):
     extension: str = ".parquet"
+    use_legacy_reader: bool = False
 
     assert BasePolarsUPathIOManager.__doc__ is not None
     __doc__ = (
@@ -73,31 +151,15 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
     ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
         assert context.metadata is not None
 
-        fs: Union[fsspec.AbstractFileSystem, None] = None
-
-        try:
-            fs = path._accessor._fs
-        except AttributeError:
-            pass
-
-        ds = pyarrow.dataset.dataset(
-            str(path),
-            filesystem=fs,
-            format=context.metadata.get("format", "parquet"),
-            partitioning=context.metadata.get("partitioning"),
-            partition_base_dir=context.metadata.get("partition_base_dir"),
-            exclude_invalid_files=context.metadata.get("exclude_invalid_files", True),
-            ignore_prefixes=context.metadata.get("ignore_prefixes", [".", "_"]),
-        )
-
-        ldf = pl.scan_pyarrow_dataset(
-            ds,
-            allow_pyarrow_filter=context.metadata.get("allow_pyarrow_filter", True),
-        )
+        if self.use_legacy_reader or Version(pl.__version__) < Version("0.19.4"):
+            ldf = scan_parquet_legacy(path, context)
+        else:
+            ldf = scan_parquet(path, context)
 
         if not with_metadata:
             return ldf
         else:
+            ds = get_pyarrow_dataset(path, context)
             dagster_polars_metadata = (
                 ds.schema.metadata.get(DAGSTER_POLARS_STORAGE_METADATA_KEY.encode("utf-8"))
                 if ds.schema.metadata is not None
