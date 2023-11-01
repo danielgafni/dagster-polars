@@ -1,9 +1,12 @@
+import json
 from enum import Enum
 from pprint import pformat
 from typing import Dict, Optional, Union
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
+
+from dagster_polars.types import LazyFrameWithMetadata, StorageMetadata
 
 try:
     from deltalake import DeltaTable
@@ -12,6 +15,8 @@ except ImportError as e:
 from upath import UPath
 
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
+
+DAGSTER_POLARS_STORAGE_METADATA_SUBDIR = ".dagster_polars_metadata"
 
 
 class DeltaWriteMode(str, Enum):
@@ -35,7 +40,13 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     Metadata values take precedence over config parameters."""  # TODO: should this be opposite?
     )
 
-    def dump_df_to_path(self, context: OutputContext, df: pl.DataFrame, path: UPath):
+    def dump_df_to_path(
+        self,
+        context: OutputContext,
+        df: pl.DataFrame,
+        path: UPath,
+        metadata: Optional[StorageMetadata] = None,
+    ):
         assert context.metadata is not None
 
         delta_write_options = context.metadata.get("delta_write_options")
@@ -59,45 +70,41 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             storage_options=storage_options,
             delta_write_options=delta_write_options,
         )
-        table = DeltaTable(str(path), storage_options=storage_options)
-        context.add_output_metadata({"version": table.version()})
+        current_version = DeltaTable(str(path), storage_options=storage_options).version()
+        context.add_output_metadata({"version": current_version})
 
-    def scan_df_from_path(self, path: UPath, context: InputContext) -> pl.LazyFrame:
+        if metadata is not None:
+            metadata_path = self.get_storage_metadata_path(path, current_version)
+            metadata_path.parent.mkdir(parents=True, exist_ok=True)
+            metadata_path.write_text(json.dumps(metadata))
+
+    def scan_df_from_path(
+        self, path: UPath, context: InputContext, with_metadata: bool = False
+    ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
         assert context.metadata is not None
 
-        version_from_metadata = context.metadata.get("version")
-        version_from_config = self.version
-
-        version: Optional[int] = None
-
-        if version_from_metadata is not None and version_from_config is not None:
-            context.log.warning(
-                f"Both version from metadata ({version_from_metadata}) "
-                f"and config ({version_from_config}) are set. Using version from metadata."
-            )
-            version = int(version_from_metadata)
-        elif version_from_metadata is None and version_from_config is not None:
-            version = int(version_from_config)
-        elif version_from_metadata is not None and version_from_config is None:
-            version = int(version_from_metadata)
-
-        version = DeltaTable(
-            str(path),
-            storage_options=self.get_storage_options(path),
-            version=version,
-        ).version()
-
-        assert version is not None, "DeltaTable version is None. This should not happen."
+        version = self.get_delta_version_to_load(path, context)
 
         context.log.debug(f"Reading Delta table with version: {version}")
 
-        return pl.scan_delta(
+        ldf = pl.scan_delta(
             str(path),
             version=version,
             delta_table_options=context.metadata.get("delta_table_options"),
             pyarrow_options=context.metadata.get("pyarrow_options"),
             storage_options=self.get_storage_options(path),
         )
+        if with_metadata:
+            version = self.get_delta_version_to_load(path, context)
+            metadata_path = self.get_storage_metadata_path(path, version)
+            if metadata_path.exists():
+                metadata = json.loads(metadata_path.read_text())
+            else:
+                metadata = {}
+            return ldf, metadata
+
+        else:
+            return ldf
 
     def get_path_for_partition(self, context: Union[InputContext, OutputContext], path: UPath, partition: str) -> UPath:
         if isinstance(context, InputContext):
@@ -150,3 +157,34 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 )
 
         return metadata
+
+    def get_delta_version_to_load(self, path: UPath, context: InputContext) -> int:
+        assert context.metadata is not None
+        version_from_metadata = context.metadata.get("version")
+
+        version_from_config = self.version
+
+        version: Optional[int] = None
+
+        if version_from_metadata is not None and version_from_config is not None:
+            context.log.warning(
+                f"Both version from metadata ({version_from_metadata}) "
+                f"and config ({version_from_config}) are set. Using version from metadata."
+            )
+            version = int(version_from_metadata)
+        elif version_from_metadata is None and version_from_config is not None:
+            version = int(version_from_config)
+        elif version_from_metadata is not None and version_from_config is None:
+            version = int(version_from_metadata)
+
+        version = DeltaTable(
+            str(path),
+            storage_options=self.get_storage_options(path),
+            version=version,
+        ).version()
+
+        assert version is not None, "DeltaTable version is None. This should not happen."
+        return version
+
+    def get_storage_metadata_path(self, path: UPath, version: int) -> UPath:
+        return path / DAGSTER_POLARS_STORAGE_METADATA_SUBDIR / f"{version}.json"

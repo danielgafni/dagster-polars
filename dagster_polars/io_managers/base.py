@@ -280,9 +280,3 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
     def get_optional_output_none_log_message(self, context: OutputContext, path: UPath) -> str:
         return f"The object for the optional output {context.name} is None, so it won't be saved to {path}!"
-
-    def save_metadata_to_path(self, path: UPath, context: OutputContext, metadata: StorageMetadata):
-        raise NotImplementedError(f"Saving metadata to storage is not supported for {self.__class__.__name__}")
-
-    def load_metadata_from_path(self, path: UPath, context: InputContext) -> StorageMetadata:
-        raise NotImplementedError(f"Loading metadata from storage is not supported for {self.__class__.__name__}")

@@ -47,7 +47,7 @@ hypothesis = "^6.77.0"
 pytest = "^7.3.1"
 deepdiff = "^6.3.0"
 isort = "^5.12.0"
-ruff = "^0.0.272"
+ruff = "^0.1.3"
 pyright = "^1.1.313"
 tox = "^4.6.0"
 tox-gh = "^1.0.0"
@@ -105,6 +105,7 @@ exclude = '''
 '''
 
 [tool.ruff]
+extend-select = ["I"]
 line-length = 120
 src = [
     "dagster_polars",
