@@ -34,8 +34,9 @@ Is a base class for IO managers that store Polars DataFrames in filesystem - loc
     supports loading multiple partitions (use `dict[str, DataFrame]` type annotation), ...
 - sensitive to type annotations. Will load eager or lazy DataFrame based on the type annotation: `polars.DataFrame` or `LazyFrame`.
 - `Optional` type annotations are supported. If the input annotation is `Optional` and is missing in the filesystem, the IOManager will skip loading the input and return `None` instead. If the output annotation is `Optional` and the output is `None`, the IOManager will skip writing the output to the filesystem.
-- Supports reading/writing arbitrary metadata dict into storage (in contrast to saving Dagster metadata into Dagster's postgres). This metadata can be then accessed outside Dagster. `Tuple[DataFrame/LazyFrame, Dict[str, Any]]` type annotation must be used on the input/output to trigger metadata read/write. This feature is supported in:
+- Supports reading/writing arbitrary metadata dict into storage (in contrast to saving Dagster metadata into Dagster's postgres). This metadata can be then accessed outside Dagster. `Tuple[DataFrame/LazyFrame, Dict[str, Any]]` type annotation must be used on the input/output to trigger metadata read/write. This feature is supported by:
   - `PolarsParquetIOManager` - metadata is saved in the Parquet file's schema metadata as json-serialized bytes at "dagster_polars_storage_metadata" key.
+  - `PolarsDeltaIOManager` - metadata is saved in `<table>/.dagster_polars_metadata/<version>.json` file.
 
 The following typing aliases are provided for convenience:
  - `StorageMetadata` = `Dict[str, Any]`
@@ -69,7 +70,7 @@ Generic builtins (like `tuple[...]` instead of `Tuple[...]`) are supported for P
 Implements reading and writing files in Apache Parquet format. Supports reading partitioned Parquet datasets (for example, often produced by Spark). All read/write options can be set via Dagster metadata values. Supports writing/reading custom metadata into the Parquet file's schema metadata.
 
 ### `PolarsDeltaIOManager`
-- `PolarsDeltaIOManager` - for reading and writing Delta Lake. All read/write options can be set via Dagster metadata values. `mode`, `overwrite_schema` and `version` can be set via config parameters. `partition_by` can be set to use native Delta Lake partitioning (it's passed to `delta_write_options` of `write_delta`). The IOManager won't manage partitioning in this case, and all the asset partitions will be stored in the same Delta Table directory. You are responsible for filtering correct partitions when reading the data in the downstream assets. Required dependencies can be installed with `pip install 'dagster-polars[deltalake]'`.
+- `PolarsDeltaIOManager` - for reading and writing Delta Lake. All read/write options can be set via Dagster metadata values. `mode`, `overwrite_schema` and `version` can be set via config parameters. `partition_by` can be set to use native Delta Lake partitioning (it's passed to `delta_write_options` of `write_delta`). The IOManager won't manage partitioning in this case, and all the asset partitions will be stored in the same Delta Table directory. You are responsible for filtering correct partitions when reading the data in the downstream assets. Required dependencies can be installed with `pip install 'dagster-polars[deltalake]'`. Supports writing/reading custom metadata to/from the DeltaTable directory.
 
 
 ## `BigQueryPolarsIOManager`

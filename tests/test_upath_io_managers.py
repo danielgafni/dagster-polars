@@ -362,7 +362,10 @@ def test_polars_upath_io_manager_output_optional_lazy(io_manager_and_df: Tuple[B
     )
 
 
-IO_MANAGERS_SUPPORTING_STORAGE_METADATA = (PolarsParquetIOManager,)
+IO_MANAGERS_SUPPORTING_STORAGE_METADATA = (
+    PolarsParquetIOManager,
+    PolarsDeltaIOManager,
+)
 
 
 def check_skip_storage_metadata_test(io_manager_def: BasePolarsUPathIOManager):
