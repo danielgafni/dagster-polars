@@ -1,7 +1,7 @@
 from typing import Optional, Sequence, Type
 
 import polars as pl
-from dagster import InputContext, OutputContext
+from dagster import InputContext, MetadataValue, OutputContext
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
 try:
@@ -45,8 +45,21 @@ class BigQueryPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
 
     """
 
-    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: pl.DataFrame, connection):
+    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: Optional[pl.DataFrame], connection):
         """Stores the polars DataFrame in BigQuery."""
+        skip_upload = False
+        if obj is None:
+            context.log.warning("Skipping BigQuery output as the output is None")
+            skip_upload = True
+        elif len(obj) == 0:
+            context.log.warning("Skipping BigQuery output as the output DataFrame is empty")
+            skip_upload = True
+
+        if skip_upload:
+            context.add_output_metadata({"missing": MetadataValue.bool(True)})
+            return
+
+        assert obj is not None
         assert isinstance(connection, bigquery.Client)
         assert context.metadata is not None
         job_config = bigquery.LoadJobConfig(write_disposition=context.metadata.get("write_disposition"))
