@@ -53,7 +53,7 @@ jobs:
       - name: Install dependencies
         run: poetry install --all-extras --sync
       - name: Install matrix overrides
-        run: poetry add polars=~${{ matrix.polars_version }} dagster=~${{ matrix.dagster_version }}&& poetry install --sync --all-extras
+        run: poetry add polars=~${{ matrix.polars_version }} dagster=~${{ matrix.dagster_version }} && poetry lock && poetry install --sync --all-extras
       - name: Print polars info
         run: python -c 'import polars; print(polars.show_versions())'
       - name: Print dagster info
@@ -97,7 +97,7 @@ jobs:
       - name: Install dependencies
         run: poetry install --all-extras --sync
       - name: Install matrix overrides
-        run: poetry add polars=~${{ matrix.polars_version }} dagster=~${{ matrix.dagster_version }} && poetry install --sync --all-extras
+        run: poetry add polars=~${{ matrix.polars_version }} dagster=~${{ matrix.dagster_version }} && poetry lock && poetry install --sync --all-extras
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
 
