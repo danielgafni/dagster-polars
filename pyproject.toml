@@ -43,7 +43,7 @@ deltalake = ["deltalake"]
 
 
 [tool.poetry.group.dev.dependencies]
-hypothesis = "^6.77.0"
+hypothesis = "^6.89.0"
 pytest = "^7.3.1"
 deepdiff = "^6.3.0"
 isort = "^5.12.0"
