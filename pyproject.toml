@@ -3,7 +3,8 @@ name = "dagster-polars"
 version = "0.0.0"
 description = "Dagster integration library for Polars"
 authors = [
-    "Daniel Gafni <danielgafni16@gmail.com>"
+    "Daniel Gafni <danielgafni16@gmail.com>",
+    "Edgar Bahilo <edgbr@proton.me>"
 ]
 readme = "README.md"
 packages = [{include = "dagster_polars"}]
