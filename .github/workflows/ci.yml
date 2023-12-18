@@ -37,6 +37,7 @@ jobs:
           - "0.17.0"
           - "0.18.0"
           - "0.19.0"
+          - "0.20.1"
     steps:
       - name: Setup python for test ${{ matrix.py }}
         uses: actions/setup-python@v2
@@ -81,6 +82,7 @@ jobs:
           - "0.17.0"
           - "0.18.0"
           - "0.19.0"
+          - "0.20.1"
     steps:
       - name: Setup python for test ${{ matrix.py }}
         uses: actions/setup-python@v2
