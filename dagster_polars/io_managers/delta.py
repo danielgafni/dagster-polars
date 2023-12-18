@@ -24,6 +24,7 @@ class DeltaWriteMode(str, Enum):
     append = "append"
     overwrite = "overwrite"
     ignore = "ignore"
+    merge = "merge"
 
 
 class PolarsDeltaIOManager(BasePolarsUPathIOManager):
@@ -49,7 +50,10 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     ):
         assert context.metadata is not None
 
-        delta_write_options = context.metadata.get("delta_write_options")
+        if context.metadata.get("mode") or self.mode != "merge":
+            delta_write_options = context.metadata.get("delta_write_options")
+        else:
+            delta_merge_options = context.metadata.get("delta_merge_options")
 
         if context.has_asset_partitions:
             delta_write_options = delta_write_options or {}
@@ -63,13 +67,26 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         storage_options = self.get_storage_options(path)
 
-        df.write_delta(
-            str(path),
-            mode=context.metadata.get("mode") or self.mode,  # type: ignore
-            overwrite_schema=context.metadata.get("overwrite_schema") or self.overwrite_schema,
-            storage_options=storage_options,
-            delta_write_options=delta_write_options,
-        )
+        if context.metadata.get("mode") or self.mode != "merge":
+            df.write_delta(
+                str(path),
+                mode=context.metadata.get("mode") or self.mode,  # type: ignore
+                overwrite_schema=context.metadata.get("overwrite_schema") or self.overwrite_schema,
+                storage_options=storage_options,
+                delta_write_options=delta_write_options,
+            )
+        else:
+            ( 
+                df.write_delta(
+                    str(path),
+                    mode=context.metadata.get("mode") or self.mode,  # type: ignore
+                    storage_options=storage_options,
+                    delta_merge_options=delta_merge_options,
+                )
+                .when_matched_update_all()
+                .when_not_matched_insert_all()
+                .execute()
+            )
         current_version = DeltaTable(str(path), storage_options=storage_options).version()
         context.add_output_metadata({"version": current_version})
 
