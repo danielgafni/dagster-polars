@@ -101,7 +101,16 @@ def test_polars_delta_io_manager_append(polars_delta_io_manager: PolarsDeltaIOMa
 
     pl_testing.assert_frame_equal(pl.concat([df, df]), pl.read_delta(saved_path))
 
-
+def test_polars_delta_io_manager_merge(polars_delta_io_manager: PolarsDeltaIOManager):
+    df = pl.DataFrame(
+        {
+            "a": [1, 2, 3],
+        }
+    )
+    x = "hello"
+    assert "hello" == x
+    ####
+    
 def test_polars_delta_io_manager_overwrite_schema(
     polars_delta_io_manager: PolarsDeltaIOManager, dagster_instance: DagsterInstance
 ):
