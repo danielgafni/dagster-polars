@@ -19,11 +19,6 @@ repos:
 #    hooks:
 #      - id: pyupgrade
 #        entry: pyupgrade --py38-plus
--   repo: https://github.com/MarcoGorelli/polars-upgrade
-    rev: 0.1.19  # polars-upgrade version goes here
-    hooks:
-    -   id: polars-upgrade
-        args: [--target-version=0.20.1]  # Polars version goes here
   - repo: local
     hooks:
       - id: ruff
@@ -48,6 +43,5 @@ repos:
         entry: pyright .
         language: system
         pass_filenames: false
-        entry: pyright .
         language: system
         pass_filenames: false
