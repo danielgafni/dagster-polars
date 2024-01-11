@@ -5,7 +5,14 @@ from pprint import pformat
 from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
 import polars as pl
-from dagster import MetadataValue, OutputContext, TableColumn, TableMetadataValue, TableRecord, TableSchema
+from dagster import (
+    MetadataValue,
+    OutputContext,
+    TableColumn,
+    TableMetadataValue,
+    TableRecord,
+    TableSchema,
+)
 
 POLARS_DATA_FRAME_ANNOTATIONS = [
     Any,
@@ -31,7 +38,7 @@ if sys.version >= "3.9":
 def cast_polars_single_value_to_dagster_table_types(val: Any):
     if val is None:
         return ""
-    elif isinstance(val, (date, datetime, time, timedelta)):
+    elif isinstance(val, (date, datetime, time, timedelta, bytes)):
         return str(val)
     elif isinstance(val, (list, dict)):
         # default=str because sometimes the object can be a list of datetimes or something like this

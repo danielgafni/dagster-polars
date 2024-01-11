@@ -1,10 +1,11 @@
 import json
 from enum import Enum
 from pprint import pformat
-from typing import Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
+from dagster._annotations import experimental
 
 from dagster_polars.types import LazyFrameWithMetadata, StorageMetadata
 
@@ -12,9 +13,12 @@ try:
     from deltalake import DeltaTable
 except ImportError as e:
     raise ImportError("Install 'dagster-polars[deltalake]' to use DeltaLake functionality") from e
-from upath import UPath
 
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
+
+if TYPE_CHECKING:
+    from upath import UPath
+
 
 DAGSTER_POLARS_STORAGE_METADATA_SUBDIR = ".dagster_polars_metadata"
 
@@ -26,25 +30,91 @@ class DeltaWriteMode(str, Enum):
     ignore = "ignore"
 
 
+@experimental
 class PolarsDeltaIOManager(BasePolarsUPathIOManager):
-    extension: str = ".delta"
+    """Implements writing and reading DeltaLake tables.
+
+    Features:
+     - All features provided by :py:class:`~dagster_polars.BasePolarsUPathIOManager`.
+     - All read/write options can be set via corresponding metadata or config parameters (metadata takes precedence).
+     - Supports native DeltaLake partitioning by storing different asset partitions in the same DeltaLake table. To enable this behavior, set the `partition_by` metadata value or config parameter (it's passed to `delta_write_options` of `pl.DataFrame.write_delta`). When using native DeltaLake partitioning, you are responsible for filtering correct partitions when reading the data in downstream assets.
+     - Supports writing/reading custom metadata to/from `.dagster_polars_metadata/<version>.json` file in the DeltaLake table directory.
+
+    Install `dagster-polars[delta]` to use this IOManager.
+
+    Examples:
+
+        .. code-block:: python
+
+            from dagster import asset
+            from dagster_polars import PolarsDeltaIOManager
+            import polars as pl
+
+            @asset(
+                io_manager_key="polars_delta_io_manager",
+                key_prefix=["my_dataset"]
+            )
+            def my_asset() -> pl.DataFrame:  # data will be stored at <base_dir>/my_dataset/my_asset.delta
+                ...
+
+            defs = Definitions(
+                assets=[my_table],
+                resources={
+                    "polars_parquet_io_manager": PolarsDeltaIOManager(base_dir="s3://my-bucket/my-dir")
+                }
+            )
+
+
+        Appending to a DeltaLake table:
+
+        .. code-block:: python
+
+            @asset(
+                io_manager_key="polars_delta_io_manager",
+                metadata={
+                    "mode": "append"
+                },
+            )
+            def my_table() -> pl.DataFrame:
+                ...
+
+        Using native DeltaLake partitioning by storing different asset partitions in the same DeltaLake table:
+
+        .. code-block:: python
+
+            from dagster import AssetExecutionContext, DailyPartitionedDefinition
+            from dagster_polars import LazyFramePartitions
+
+            @asset(
+                io_manager_key="polars_delta_io_manager",
+                metadata={
+                    "partition_by": "partition_col"
+                },
+                partitions_def=...
+            )
+            def upstream(context: AssetExecutionContext) -> pl.DataFrame:
+                df = ...
+
+                # add partition to the DataFrame
+                df = df.with_columns(pl.lit(context.partition_key).alias("partition_col"))
+                return df
+
+            @asset
+            def downstream(upstream: LazyFramePartitions) -> pl.DataFrame:
+                # concat LazyFrames, filter required partitions and call .collect()
+                ...
+    """
+
+    extension: str = ".delta"  # type: ignore
     mode: DeltaWriteMode = DeltaWriteMode.overwrite.value  # type: ignore
     overwrite_schema: bool = False
     version: Optional[int] = None
-
-    assert BasePolarsUPathIOManager.__doc__ is not None
-    __doc__ = (
-        BasePolarsUPathIOManager.__doc__
-        + """\nWorks with Delta files.
-    All read/write arguments can be passed via corresponding metadata values.
-    Metadata values take precedence over config parameters."""  # TODO: should this be opposite?
-    )
 
     def dump_df_to_path(
         self,
         context: OutputContext,
         df: pl.DataFrame,
-        path: UPath,
+        path: "UPath",
         metadata: Optional[StorageMetadata] = None,
     ):
         assert context.metadata is not None
@@ -78,8 +148,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             metadata_path.parent.mkdir(parents=True, exist_ok=True)
             metadata_path.write_text(json.dumps(metadata))
 
-    def scan_df_from_path(
-        self, path: UPath, context: InputContext, with_metadata: bool = False
+    def scan_df_from_path(  # type: ignore
+        self, path: "UPath", context: InputContext, with_metadata: Optional[bool] = False
     ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
         assert context.metadata is not None
 
@@ -106,7 +176,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         else:
             return ldf
 
-    def get_path_for_partition(self, context: Union[InputContext, OutputContext], path: UPath, partition: str) -> UPath:
+    def get_path_for_partition(
+        self, context: Union[InputContext, OutputContext], path: "UPath", partition: str
+    ) -> "UPath":
         if isinstance(context, InputContext):
             if (
                 context.upstream_output is not None
@@ -158,7 +230,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         return metadata
 
-    def get_delta_version_to_load(self, path: UPath, context: InputContext) -> int:
+    def get_delta_version_to_load(self, path: "UPath", context: InputContext) -> int:
         assert context.metadata is not None
         version_from_metadata = context.metadata.get("version")
 
@@ -186,5 +258,5 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         assert version is not None, "DeltaTable version is None. This should not happen."
         return version
 
-    def get_storage_metadata_path(self, path: UPath, version: int) -> UPath:
+    def get_storage_metadata_path(self, path: "UPath", version: int) -> "UPath":
         return path / DAGSTER_POLARS_STORAGE_METADATA_SUBDIR / f"{version}.json"

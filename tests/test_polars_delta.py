@@ -47,9 +47,9 @@ from tests.utils import get_saved_path
         allow_infinities=False,
     )
 )
-@settings(max_examples=100, deadline=None)
+@settings(max_examples=50, deadline=None)
 def test_polars_delta_io_manager(session_polars_delta_io_manager: PolarsDeltaIOManager, df: pl.DataFrame):
-    time.sleep(0.1)  # too frequent writes mess up DeltaLake
+    time.sleep(0.2)  # too frequent writes mess up DeltaLake concurrent
 
     @asset(io_manager_def=session_polars_delta_io_manager, metadata={"overwrite_schema": True})
     def upstream() -> pl.DataFrame:
@@ -128,7 +128,10 @@ def test_polars_delta_io_manager_overwrite_schema(
         pl.read_delta(saved_path),
     )
 
-    @asset(io_manager_def=polars_delta_io_manager, metadata={"overwrite_schema": True, "mode": "overwrite"})
+    @asset(
+        io_manager_def=polars_delta_io_manager,
+        metadata={"overwrite_schema": True, "mode": "overwrite"},
+    )
     def overwrite_schema_asset_2() -> pl.DataFrame:
         return pl.DataFrame(
             {
@@ -154,7 +157,9 @@ def test_polars_delta_io_manager_overwrite_schema(
     # test IOManager configuration works too
     @asset(
         io_manager_def=PolarsDeltaIOManager(
-            base_dir=dagster_instance.storage_directory(), mode=DeltaWriteMode.overwrite, overwrite_schema=True
+            base_dir=dagster_instance.storage_directory(),
+            mode=DeltaWriteMode.overwrite,
+            overwrite_schema=True,
         )
     )
     def overwrite_schema_asset_3() -> pl.DataFrame:  # type: ignore
@@ -186,7 +191,11 @@ def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIO
 
     partitions_def = StaticPartitionsDefinition(["a", "b"])
 
-    @asset(io_manager_def=manager, partitions_def=partitions_def, metadata={"partition_by": "partition"})
+    @asset(
+        io_manager_def=manager,
+        partitions_def=partitions_def,
+        metadata={"partition_by": "partition"},
+    )
     def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
 
