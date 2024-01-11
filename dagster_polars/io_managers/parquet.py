@@ -164,7 +164,7 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
                 assert metadata["my_custom_metadata"] == "my_custom_value"
     """
 
-    extension: str = ".parquet"
+    extension: str = ".parquet"  # type: ignore
     use_legacy_reader: bool = False
 
     def dump_df_to_path(
@@ -215,9 +215,9 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
                 **(pyarrow_options or {}),
             )
 
-    def scan_df_from_path(
+    def scan_df_from_path(  # type: ignore
         self, path: "UPath", context: InputContext, with_metadata: Optional[bool] = False
-    ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:  # type: ignore
+    ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
         assert context.metadata is not None
 
         if self.use_legacy_reader or Version(pl.__version__) < Version("0.19.4"):
