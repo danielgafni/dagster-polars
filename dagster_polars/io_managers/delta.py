@@ -150,7 +150,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
     def scan_df_from_path(
         self, path: "UPath", context: InputContext, with_metadata: bool = False
-    ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
+    ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:  # type: ignore
         assert context.metadata is not None
 
         version = self.get_delta_version_to_load(path, context)
@@ -178,7 +178,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
     def get_path_for_partition(
         self, context: Union[InputContext, OutputContext], path: "UPath", partition: str
-    ) -> UPath:
+    ) -> "UPath":
         if isinstance(context, InputContext):
             if (
                 context.upstream_output is not None
@@ -258,5 +258,5 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         assert version is not None, "DeltaTable version is None. This should not happen."
         return version
 
-    def get_storage_metadata_path(self, path: "UPath", version: int) -> UPath:
+    def get_storage_metadata_path(self, path: "UPath", version: int) -> "UPath":
         return path / DAGSTER_POLARS_STORAGE_METADATA_SUBDIR / f"{version}.json"

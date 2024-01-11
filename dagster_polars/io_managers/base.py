@@ -208,7 +208,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
                 self.dump_df_to_path(context=context, df=df, path=path, metadata=metadata)
 
     def load_from_path(
-        self, path: "UPath", context: InputContext
+        self, context: InputContext, path: "UPath"
     ) -> Union[
         pl.DataFrame,
         pl.LazyFrame,
@@ -275,7 +275,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
     def get_path_for_partition(
         self, context: Union[InputContext, OutputContext], path: "UPath", partition: str
-    ) -> UPath:
+    ) -> "UPath":
         """Method for accessing the path for a given partition.
 
         Override this method if you want to use a different partitioning scheme

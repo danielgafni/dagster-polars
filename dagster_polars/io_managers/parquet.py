@@ -217,7 +217,7 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
 
     def scan_df_from_path(
         self, path: "UPath", context: InputContext, with_metadata: Optional[bool] = False
-    ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
+    ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:  # type: ignore
         assert context.metadata is not None
 
         if self.use_legacy_reader or Version(pl.__version__) < Version("0.19.4"):
