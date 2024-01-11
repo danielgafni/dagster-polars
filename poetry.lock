@@ -357,31 +357,31 @@ pytz = ">2021.1"
 
 [[package]]
 name = "dagit"
-version = "1.5.8"
+version = "1.6.0"
 description = "Web UI for dagster."
 optional = false
 python-versions = "*"
 files = [
-    {file = "dagit-1.5.8-py3-none-any.whl", hash = "sha256:7fac1f954c7634d8f094587d59514d600a086943258b9ae41fbf8e73e0aae872"},
-    {file = "dagit-1.5.8.tar.gz", hash = "sha256:66df7996cb8dbbc8574206d7f269e2c277930e23a10c81d4f37c61f4885bd715"},
+    {file = "dagit-1.6.0-py3-none-any.whl", hash = "sha256:760ad797c3310fc87361fc3620482e635b0a26d63b96850285727a78f8452ef0"},
+    {file = "dagit-1.6.0.tar.gz", hash = "sha256:e14c0fe58e1d6199639f29fc655fe006ef9fc0c5f7d1bb49dbc8dceecb277d22"},
 ]
 
 [package.dependencies]
-dagster-webserver = "1.5.8"
+dagster-webserver = "1.6.0"
 
 [package.extras]
-notebook = ["dagster-webserver[notebook] (==1.5.8)"]
-test = ["dagster-webserver[test] (==1.5.8)"]
+notebook = ["dagster-webserver[notebook] (==1.6.0)"]
+test = ["dagster-webserver[test] (==1.6.0)"]
 
 [[package]]
 name = "dagster"
-version = "1.5.8"
+version = "1.6.0"
 description = "Dagster is an orchestration platform for the development, production, and observation of data assets."
 optional = false
 python-versions = "*"
 files = [
-    {file = "dagster-1.5.8-py3-none-any.whl", hash = "sha256:d4aa3d3b76c8add5bdbe16a749c722bd5ef684138892084767610b1b87422b6f"},
-    {file = "dagster-1.5.8.tar.gz", hash = "sha256:98ad30e7bc45f6b04a3d0d4672270566d22d401ab43c0d2c647fb78864954ba2"},
+    {file = "dagster-1.6.0-py3-none-any.whl", hash = "sha256:3a027adc7a24680bb8f6c8a6ec7694233e35e48d6330736319e4f59142b70d59"},
+    {file = "dagster-1.6.0.tar.gz", hash = "sha256:9ecb53455a2c73b2f79ae251416b548dfcae5ebae30892dac666617ae460a3de"},
 ]
 
 [package.dependencies]
@@ -389,53 +389,55 @@ alembic = ">=1.2.1,<1.6.3 || >1.6.3,<1.7.0 || >1.7.0,<1.11.0 || >1.11.0"
 click = ">=5.0"
 coloredlogs = ">=6.1,<=14.0"
 croniter = ">=0.3.34"
-dagster-pipes = "1.5.8"
+dagster-pipes = "1.6.0"
 docstring-parser = "*"
 grpcio = ">=1.44.0"
 grpcio-health-checking = ">=1.44.0"
 Jinja2 = "*"
 packaging = ">=20.9"
-pendulum = "<3"
-protobuf = ">=3.20.0"
+pendulum = ">=0.7.0,<3"
+protobuf = ">=3.20.0,<5"
 psutil = {version = ">=1.0", markers = "platform_system == \"Windows\""}
-pydantic = ">1.10.0,<1.10.7 || >1.10.7"
+pydantic = ">1.10.0,<1.10.7 || >1.10.7,<3"
 python-dateutil = "*"
 python-dotenv = "*"
 pytz = "*"
 pywin32 = {version = "!=226", markers = "platform_system == \"Windows\""}
 PyYAML = ">=5.1"
 requests = "*"
+rich = "*"
 setuptools = "*"
-sqlalchemy = ">=1.0"
+sqlalchemy = ">=1.0,<3"
+structlog = "*"
 tabulate = "*"
-tomli = "*"
+tomli = "<3"
 toposort = ">=1.0"
-tqdm = "*"
-typing-extensions = ">=4.4.0"
+tqdm = "<5"
+typing-extensions = ">=4.4.0,<5"
 universal-pathlib = "*"
 watchdog = ">=0.8.3"
 
 [package.extras]
 docker = ["docker"]
 mypy = ["mypy (==0.991)"]
-pyright = ["pandas-stubs", "pyright (==1.1.332)", "types-PyYAML", "types-backports", "types-certifi", "types-chardet", "types-croniter", "types-cryptography", "types-mock", "types-paramiko", "types-pkg-resources", "types-pyOpenSSL", "types-python-dateutil", "types-pytz", "types-requests", "types-simplejson", "types-six", "types-sqlalchemy (==1.4.53.34)", "types-tabulate", "types-toml", "types-tzlocal"]
-ruff = ["ruff (==0.1.1)"]
-test = ["buildkite-test-collector", "docker", "grpcio-tools (>=1.44.0)", "mock (==3.0.5)", "morefs[asynclocal]", "objgraph", "pytest (>=7.0.1)", "pytest-cov (==2.10.1)", "pytest-dependency (==0.5.1)", "pytest-mock (==3.3.1)", "pytest-rerunfailures (==10.0)", "pytest-runner (==5.2)", "pytest-xdist (==3.3.1)", "responses (<=0.23.1)", "syrupy (<4)", "tox (==3.25.0)", "yamllint"]
+pyright = ["pandas-stubs", "pyright (==1.1.339)", "types-PyYAML", "types-backports", "types-certifi", "types-chardet", "types-croniter", "types-cryptography", "types-mock", "types-paramiko", "types-pkg-resources", "types-pyOpenSSL", "types-python-dateutil", "types-pytz", "types-requests", "types-simplejson", "types-six", "types-sqlalchemy (==1.4.53.34)", "types-tabulate", "types-toml", "types-tzlocal"]
+ruff = ["ruff (==0.1.7)"]
+test = ["buildkite-test-collector", "docker", "grpcio-tools (>=1.44.0)", "mock (==3.0.5)", "morefs[asynclocal]", "mypy-protobuf", "objgraph", "pytest (>=7.0.1)", "pytest-cov (==2.10.1)", "pytest-dependency (==0.5.1)", "pytest-mock (==3.3.1)", "pytest-rerunfailures (==10.0)", "pytest-runner (==5.2)", "pytest-xdist (==3.3.1)", "responses (<=0.23.1)", "syrupy (<4)", "tox (==3.25.0)"]
 
 [[package]]
 name = "dagster-gcp"
-version = "0.21.8"
+version = "0.22.0"
 description = "Package for GCP-specific Dagster framework op and resource components."
 optional = true
 python-versions = "*"
 files = [
-    {file = "dagster-gcp-0.21.8.tar.gz", hash = "sha256:93d2054f338e69bd7d7b3b66dd291073430d3f59fcc24f69412dcc532026a423"},
-    {file = "dagster_gcp-0.21.8-py3-none-any.whl", hash = "sha256:b9e87274bd59fa0319e34ebe6467763cbf26faa690a006e9374168f2382a4b3e"},
+    {file = "dagster-gcp-0.22.0.tar.gz", hash = "sha256:f5370fb0fb43e964bb28decf76c8aae37706be5db3e1c051dfeac596e36c1aa8"},
+    {file = "dagster_gcp-0.22.0-py3-none-any.whl", hash = "sha256:a4c6edbea37a661cdda7bc9e82f8abd0900e8d38da6c66d1954127f6588e1890"},
 ]
 
 [package.dependencies]
-dagster = "1.5.8"
-dagster-pandas = "0.21.8"
+dagster = "1.6.0"
+dagster-pandas = "0.22.0"
 db-dtypes = "*"
 google-api-python-client = "*"
 google-cloud-bigquery = "*"
@@ -447,63 +449,63 @@ pyarrow = ["pyarrow"]
 
 [[package]]
 name = "dagster-graphql"
-version = "1.5.8"
+version = "1.6.0"
 description = "The GraphQL frontend to python dagster."
 optional = false
 python-versions = "*"
 files = [
-    {file = "dagster-graphql-1.5.8.tar.gz", hash = "sha256:04d67fb76db7d75e0d7e839c1191214543c983dcb7085d5e7ba3b9d5573c81f7"},
-    {file = "dagster_graphql-1.5.8-py3-none-any.whl", hash = "sha256:408d709e3c2c83e5abbf5416ef1bbde23adbdee93e6938fedd2681a566dd521b"},
+    {file = "dagster-graphql-1.6.0.tar.gz", hash = "sha256:c5aee8c43245a60096a36d886fac318ae34115dd39b30775ab92a3bd952771f9"},
+    {file = "dagster_graphql-1.6.0-py3-none-any.whl", hash = "sha256:36922ae1b183062a37d34aba49aa1fca20a283ac4286ece4b5d1f794c816ee70"},
 ]
 
 [package.dependencies]
-dagster = "1.5.8"
-gql = {version = ">=3.0.0", extras = ["requests"]}
-graphene = ">=3"
+dagster = "1.6.0"
+gql = {version = ">=3,<4", extras = ["requests"]}
+graphene = ">=3,<4"
 requests = "*"
 starlette = "*"
 
 [[package]]
 name = "dagster-pandas"
-version = "0.21.8"
+version = "0.22.0"
 description = "Utilities and examples for working with pandas and dagster, an opinionated framework for expressing data pipelines"
 optional = true
 python-versions = "*"
 files = [
-    {file = "dagster-pandas-0.21.8.tar.gz", hash = "sha256:2dcad1827ff616b69939f095179a7cd3f4bb09b366cb4b5e45c682ec9fe2b39f"},
-    {file = "dagster_pandas-0.21.8-py3-none-any.whl", hash = "sha256:6446767487756dfc410d6c714366a0c665c74bcbf5a64e04396e424d19778f29"},
+    {file = "dagster-pandas-0.22.0.tar.gz", hash = "sha256:2d492c8306b3d7f81a527eb1bed31f6823c5da39f7cf3862ad4086d074a483d0"},
+    {file = "dagster_pandas-0.22.0-py3-none-any.whl", hash = "sha256:be77a7284a5b649ee1aecc51d9498272063ed5e2519b7ba68f85b6fa22614e21"},
 ]
 
 [package.dependencies]
-dagster = "1.5.8"
+dagster = "1.6.0"
 pandas = "*"
 
 [[package]]
 name = "dagster-pipes"
-version = "1.5.8"
+version = "1.6.0"
 description = "Toolkit for Dagster integrations with transform logic outside of Dagster"
 optional = false
 python-versions = "*"
 files = [
-    {file = "dagster-pipes-1.5.8.tar.gz", hash = "sha256:b632a5aad45f6fc788731c6ef3b0afb167299dd5910c1212fbedcf5595ca11ff"},
-    {file = "dagster_pipes-1.5.8-py3-none-any.whl", hash = "sha256:719201a63193a67294bde2936852ef848b97dbaadcd56e1316fa3eb08afef7e2"},
+    {file = "dagster-pipes-1.6.0.tar.gz", hash = "sha256:b3561c4606da1220b2718e38c68fa724f01f72f82262b20614d183a0e78d8bff"},
+    {file = "dagster_pipes-1.6.0-py3-none-any.whl", hash = "sha256:c6f77cc170038822a0312aa6701eb566aa52c02345584174806024431d9c3f3b"},
 ]
 
 [[package]]
 name = "dagster-webserver"
-version = "1.5.8"
+version = "1.6.0"
 description = "Web UI for dagster."
 optional = false
 python-versions = "*"
 files = [
-    {file = "dagster_webserver-1.5.8-py3-none-any.whl", hash = "sha256:5a9df81ea4417b0a22a7a2b7926c9ed4ce4513fe20ce43c1cd791ddaa2290329"},
-    {file = "dagster_webserver-1.5.8.tar.gz", hash = "sha256:e80576b9e18f0a8781c2cfee17ec4027c5a54f4f9edc87aa15f9e1a28e4d9cd0"},
+    {file = "dagster-webserver-1.6.0.tar.gz", hash = "sha256:70ee48c3cfd9600936cfdb6823f5fa2273d10068a328b25394ae49057fc289cf"},
+    {file = "dagster_webserver-1.6.0-py3-none-any.whl", hash = "sha256:5221a527f7b37e04c8686e8f3f0c020663ce39eb1f7f49a798111666473009dd"},
 ]
 
 [package.dependencies]
 click = ">=7.0,<9.0"
-dagster = "1.5.8"
-dagster-graphql = "1.5.8"
+dagster = "1.6.0"
+dagster-graphql = "1.6.0"
 starlette = "*"
 uvicorn = {version = "*", extras = ["standard"]}
 
@@ -1428,6 +1430,30 @@ lingua = ["lingua"]
 testing = ["pytest"]
 
 [[package]]
+name = "markdown-it-py"
+version = "3.0.0"
+description = "Python port of markdown-it. Markdown parsing, done right!"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "markdown-it-py-3.0.0.tar.gz", hash = "sha256:e3f60a94fa066dc52ec76661e37c851cb232d92f9886b15cb560aaada2df8feb"},
+    {file = "markdown_it_py-3.0.0-py3-none-any.whl", hash = "sha256:355216845c60bd96232cd8d8c40e8f9765cc86f46880e43a8fd22dc1a1a8cab1"},
+]
+
+[package.dependencies]
+mdurl = ">=0.1,<1.0"
+
+[package.extras]
+benchmarking = ["psutil", "pytest", "pytest-benchmark"]
+code-style = ["pre-commit (>=3.0,<4.0)"]
+compare = ["commonmark (>=0.9,<1.0)", "markdown (>=3.4,<4.0)", "mistletoe (>=1.0,<2.0)", "mistune (>=2.0,<3.0)", "panflute (>=2.3,<3.0)"]
+linkify = ["linkify-it-py (>=1,<3)"]
+plugins = ["mdit-py-plugins"]
+profiling = ["gprof2dot"]
+rtd = ["jupyter_sphinx", "mdit-py-plugins", "myst-parser", "pyyaml", "sphinx", "sphinx-copybutton", "sphinx-design", "sphinx_book_theme"]
+testing = ["coverage", "pytest", "pytest-cov", "pytest-regressions"]
+
+[[package]]
 name = "markupsafe"
 version = "2.1.3"
 description = "Safely add untrusted strings to HTML/XML markup."
@@ -1484,6 +1510,17 @@ files = [
     {file = "MarkupSafe-2.1.3-cp39-cp39-win32.whl", hash = "sha256:fec21693218efe39aa7f8599346e90c705afa52c5b31ae019b2e57e8f6542bb2"},
     {file = "MarkupSafe-2.1.3-cp39-cp39-win_amd64.whl", hash = "sha256:3fd4abcb888d15a94f32b75d8fd18ee162ca0c064f35b11134be77050296d6ba"},
     {file = "MarkupSafe-2.1.3.tar.gz", hash = "sha256:af598ed32d6ae86f1b747b82783958b1a4ab8f617b06fe68795c7f026abbdcad"},
+]
+
+[[package]]
+name = "mdurl"
+version = "0.1.2"
+description = "Markdown URL utilities"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
+    {file = "mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"},
 ]
 
 [[package]]
@@ -2148,6 +2185,21 @@ files = [
 typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 
 [[package]]
+name = "pygments"
+version = "2.17.2"
+description = "Pygments is a syntax highlighting package written in Python."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pygments-2.17.2-py3-none-any.whl", hash = "sha256:b27c2826c47d0f3219f29554824c30c5e8945175d888647acd804ddd04af846c"},
+    {file = "pygments-2.17.2.tar.gz", hash = "sha256:da46cec9fd2de5be3a8a784f434e4c4ab670b4ff54d605c4c2717e9d49c4c367"},
+]
+
+[package.extras]
+plugins = ["importlib-metadata"]
+windows-terminal = ["colorama (>=0.4.6)"]
+
+[[package]]
 name = "pyparsing"
 version = "3.1.1"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
@@ -2420,6 +2472,25 @@ files = [
 requests = ">=2.0.1,<3.0.0"
 
 [[package]]
+name = "rich"
+version = "13.7.0"
+description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
+optional = false
+python-versions = ">=3.7.0"
+files = [
+    {file = "rich-13.7.0-py3-none-any.whl", hash = "sha256:6da14c108c4866ee9520bbffa71f6fe3962e193b7da68720583850cd4548e235"},
+    {file = "rich-13.7.0.tar.gz", hash = "sha256:5cb5123b5cf9ee70584244246816e9114227e0b98ad9176eede6ad54bf5403fa"},
+]
+
+[package.dependencies]
+markdown-it-py = ">=2.2.0"
+pygments = ">=2.13.0,<3.0.0"
+typing-extensions = {version = ">=4.0.0,<5.0", markers = "python_version < \"3.9\""}
+
+[package.extras]
+jupyter = ["ipywidgets (>=7.5.1,<9)"]
+
+[[package]]
 name = "rsa"
 version = "4.9"
 description = "Pure-Python RSA implementation"
@@ -2612,6 +2683,23 @@ typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""
 
 [package.extras]
 full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart", "pyyaml"]
+
+[[package]]
+name = "structlog"
+version = "24.1.0"
+description = "Structured Logging for Python"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "structlog-24.1.0-py3-none-any.whl", hash = "sha256:3f6efe7d25fab6e86f277713c218044669906537bb717c1807a09d46bca0714d"},
+    {file = "structlog-24.1.0.tar.gz", hash = "sha256:41a09886e4d55df25bdcb9b5c9674bccfab723ff43e0a86a1b7b236be8e57b16"},
+]
+
+[package.extras]
+dev = ["structlog[tests,typing]"]
+docs = ["furo", "myst-parser", "sphinx", "sphinx-notfound-page", "sphinxcontrib-mermaid", "sphinxext-opengraph", "twisted"]
+tests = ["freezegun (>=0.2.8)", "pretend", "pytest (>=6.0)", "pytest-asyncio (>=0.17)", "simplejson"]
+typing = ["mypy (>=1.4)", "rich", "twisted"]
 
 [[package]]
 name = "tabulate"
@@ -3186,4 +3274,4 @@ gcp = ["dagster-gcp"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "3535e88269d3a263acc88adecaa588a20da4720016deb1e64f50053f5716c4ae"
+content-hash = "13787eac4fc579734fbb3f0c4e061e59b81bba22fb4aa44fd0317d6bc532d00c"
