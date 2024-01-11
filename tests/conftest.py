@@ -37,14 +37,18 @@ def session_scoped_dagster_instance(tmp_path_factory: TempPathFactory) -> Dagste
 
 
 @pytest.fixture(scope="session")
-def session_polars_parquet_io_manager(session_scoped_dagster_instance: DagsterInstance) -> PolarsParquetIOManager:
+def session_polars_parquet_io_manager(
+    session_scoped_dagster_instance: DagsterInstance,
+) -> PolarsParquetIOManager:
     return PolarsParquetIOManager(
         base_dir=session_scoped_dagster_instance.storage_directory()
     )  # to use with hypothesis
 
 
 @pytest.fixture(scope="session")
-def session_polars_delta_io_manager(session_scoped_dagster_instance: DagsterInstance) -> PolarsDeltaIOManager:
+def session_polars_delta_io_manager(
+    session_scoped_dagster_instance: DagsterInstance,
+) -> PolarsDeltaIOManager:
     return PolarsDeltaIOManager(base_dir=session_scoped_dagster_instance.storage_directory())  # to use with hypothesis
 
 
@@ -89,10 +93,12 @@ _df_for_delta = pl.DataFrame(
 
 @pytest_cases.fixture
 @pytest_cases.parametrize(
-    "class_and_df", [(PolarsParquetIOManager, _df_for_parquet), (PolarsDeltaIOManager, _df_for_delta)]
+    "class_and_df",
+    [(PolarsParquetIOManager, _df_for_parquet), (PolarsDeltaIOManager, _df_for_delta)],
 )
 def io_manager_and_df(  # to use without hypothesis
-    class_and_df: Tuple[Type[BasePolarsUPathIOManager], pl.DataFrame], dagster_instance: DagsterInstance
+    class_and_df: Tuple[Type[BasePolarsUPathIOManager], pl.DataFrame],
+    dagster_instance: DagsterInstance,
 ) -> Tuple[BasePolarsUPathIOManager, pl.DataFrame]:
     klass, df = class_and_df
     return klass(base_dir=dagster_instance.storage_directory()), df

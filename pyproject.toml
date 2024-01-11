@@ -46,7 +46,6 @@ deltalake = ["deltalake"]
 hypothesis = "^6.89.0"
 pytest = "^7.3.1"
 deepdiff = "^6.3.0"
-isort = "^5.12.0"
 ruff = "^0.1.3"
 pyright = "^1.1.313"
 tox = "^4.6.0"
@@ -74,17 +73,12 @@ metadata = false
 [tool.poetry-dynamic-versioning.substitution]
 files = [
     "pyproject.toml",
-    "dagster_polars/_version.py"
+    "dagster_polars/version.py"
 ]
 
 [tool.pytest.ini_options]
 log_cli = true
 log_level = "INFO"
-
-[tool.isort]
-profile = "black"
-line_length = 120
-src_paths = ["dagster_polars", "tests"]
 
 [tool.black]
 line-length = 120

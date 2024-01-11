@@ -5,6 +5,7 @@ from typing import Dict, Optional, Union
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
+from dagster._annotations import experimental
 
 from dagster_polars.types import LazyFrameWithMetadata, StorageMetadata
 
@@ -26,19 +27,85 @@ class DeltaWriteMode(str, Enum):
     ignore = "ignore"
 
 
+@experimental
 class PolarsDeltaIOManager(BasePolarsUPathIOManager):
+    """Implements writing and reading DeltaLake tables.
+
+    Features:
+     - All features provided by :py:class:`~dagster_polars.BasePolarsUPathIOManager`.
+     - All read/write options can be set via corresponding metadata or config parameters (metadata takes precedence).
+     - Supports native DeltaLake partitioning by storing different asset partitions in the same DeltaLake table. To enable this behavior, set the `partition_by` metadata value or config parameter (it's passed to `delta_write_options` of `pl.DataFrame.write_delta`). When using native DeltaLake partitioning, you are responsible for filtering correct partitions when reading the data in downstream assets.
+     - Supports writing/reading custom metadata to/from `.dagster_polars_metadata/<version>.json` file in the DeltaLake table directory.
+
+    Install `dagster-polars[delta]` to use this IOManager.
+
+    Examples:
+
+        .. code-block:: python
+
+            from dagster import asset
+            from dagster_polars import PolarsDeltaIOManager
+            import polars as pl
+
+            @asset(
+                io_manager_key="polars_delta_io_manager",
+                key_prefix=["my_dataset"]
+            )
+            def my_asset() -> pl.DataFrame:  # data will be stored at <base_dir>/my_dataset/my_asset.delta
+                ...
+
+            defs = Definitions(
+                assets=[my_table],
+                resources={
+                    "polars_parquet_io_manager": PolarsDeltaIOManager(base_dir="s3://my-bucket/my-dir")
+                }
+            )
+
+
+        Appending to a DeltaLake table:
+
+        .. code-block:: python
+
+            @asset(
+                io_manager_key="polars_delta_io_manager",
+                metadata={
+                    "mode": "append"
+                },
+            )
+            def my_table() -> pl.DataFrame:
+                ...
+
+        Using native DeltaLake partitioning by storing different asset partitions in the same DeltaLake table:
+
+        .. code-block:: python
+
+            from dagster import AssetExecutionContext, DailyPartitionedDefinition
+            from dagster_polars import LazyFramePartitions
+
+            @asset(
+                io_manager_key="polars_delta_io_manager",
+                metadata={
+                    "partition_by": "partition_col"
+                },
+                partitions_def=...
+            )
+            def upstream(context: AssetExecutionContext) -> pl.DataFrame:
+                df = ...
+
+                # add partition to the DataFrame
+                df = df.with_columns(pl.lit(context.partition_key).alias("partition_col"))
+                return df
+
+            @asset
+            def downstream(upstream: LazyFramePartitions) -> pl.DataFrame:
+                # concat LazyFrames, filter required partitions and call .collect()
+                ...
+    """
+
     extension: str = ".delta"
     mode: DeltaWriteMode = DeltaWriteMode.overwrite.value  # type: ignore
     overwrite_schema: bool = False
     version: Optional[int] = None
-
-    assert BasePolarsUPathIOManager.__doc__ is not None
-    __doc__ = (
-        BasePolarsUPathIOManager.__doc__
-        + """\nWorks with Delta files.
-    All read/write arguments can be passed via corresponding metadata values.
-    Metadata values take precedence over config parameters."""  # TODO: should this be opposite?
-    )
 
     def dump_df_to_path(
         self,
