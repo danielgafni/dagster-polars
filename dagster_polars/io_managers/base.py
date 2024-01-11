@@ -149,6 +149,8 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     _base_path: "UPath" = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
+        from upath import UPath
+
         self._base_path = (
             UPath(self.base_dir)
             if self.base_dir is not None
