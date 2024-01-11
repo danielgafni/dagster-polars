@@ -1,7 +1,7 @@
 import json
 from enum import Enum
 from pprint import pformat
-from typing import Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
@@ -13,9 +13,12 @@ try:
     from deltalake import DeltaTable
 except ImportError as e:
     raise ImportError("Install 'dagster-polars[deltalake]' to use DeltaLake functionality") from e
-from upath import UPath
 
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
+
+if TYPE_CHECKING:
+    from upath import UPath
+
 
 DAGSTER_POLARS_STORAGE_METADATA_SUBDIR = ".dagster_polars_metadata"
 
@@ -111,7 +114,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         self,
         context: OutputContext,
         df: pl.DataFrame,
-        path: UPath,
+        path: "UPath",
         metadata: Optional[StorageMetadata] = None,
     ):
         assert context.metadata is not None
@@ -146,7 +149,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             metadata_path.write_text(json.dumps(metadata))
 
     def scan_df_from_path(
-        self, path: UPath, context: InputContext, with_metadata: bool = False
+        self, path: "UPath", context: InputContext, with_metadata: bool = False
     ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
         assert context.metadata is not None
 
@@ -173,7 +176,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         else:
             return ldf
 
-    def get_path_for_partition(self, context: Union[InputContext, OutputContext], path: UPath, partition: str) -> UPath:
+    def get_path_for_partition(
+        self, context: Union[InputContext, OutputContext], path: "UPath", partition: str
+    ) -> UPath:
         if isinstance(context, InputContext):
             if (
                 context.upstream_output is not None
@@ -225,7 +230,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         return metadata
 
-    def get_delta_version_to_load(self, path: UPath, context: InputContext) -> int:
+    def get_delta_version_to_load(self, path: "UPath", context: InputContext) -> int:
         assert context.metadata is not None
         version_from_metadata = context.metadata.get("version")
 
@@ -253,5 +258,5 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         assert version is not None, "DeltaTable version is None. This should not happen."
         return version
 
-    def get_storage_metadata_path(self, path: UPath, version: int) -> UPath:
+    def get_storage_metadata_path(self, path: "UPath", version: int) -> UPath:
         return path / DAGSTER_POLARS_STORAGE_METADATA_SUBDIR / f"{version}.json"

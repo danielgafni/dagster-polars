@@ -1,6 +1,7 @@
 import sys
 from abc import abstractmethod
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     Literal,
@@ -28,7 +29,6 @@ from dagster import (
 )
 from dagster._annotations import experimental
 from pydantic.fields import Field, PrivateAttr
-from upath import UPath
 
 from dagster_polars.io_managers.utils import get_polars_metadata
 from dagster_polars.types import (
@@ -39,6 +39,9 @@ from dagster_polars.types import (
     LazyFrameWithMetadata,
     StorageMetadata,
 )
+
+if TYPE_CHECKING:
+    from upath import UPath
 
 POLARS_EAGER_FRAME_ANNOTATIONS = [
     pl.DataFrame,
@@ -143,7 +146,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
     base_dir: Optional[str] = Field(default=None, description="Base directory for storing files.")
 
-    _base_path: UPath = PrivateAttr()
+    _base_path: "UPath" = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._base_path = (
@@ -157,7 +160,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         self,
         context: OutputContext,
         df: pl.DataFrame,
-        path: UPath,
+        path: "UPath",
         metadata: Optional[StorageMetadata] = None,
     ):
         ...
@@ -165,20 +168,20 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     @overload
     @abstractmethod
     def scan_df_from_path(
-        self, path: UPath, context: InputContext, with_metadata: Literal[None, False]
+        self, path: "UPath", context: InputContext, with_metadata: Literal[None, False]
     ) -> pl.LazyFrame:
         ...
 
     @overload
     @abstractmethod
     def scan_df_from_path(
-        self, path: UPath, context: InputContext, with_metadata: Literal[True]
+        self, path: "UPath", context: InputContext, with_metadata: Literal[True]
     ) -> LazyFrameWithMetadata:
         ...
 
     @abstractmethod
     def scan_df_from_path(
-        self, path: UPath, context: InputContext, with_metadata: Optional[bool] = False
+        self, path: "UPath", context: InputContext, with_metadata: Optional[bool] = False
     ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
         ...
 
@@ -186,7 +189,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         self,
         context: OutputContext,
         obj: Union[pl.DataFrame, Optional[pl.DataFrame], Tuple[pl.DataFrame, Dict[str, Any]]],
-        path: UPath,
+        path: "UPath",
     ):
         if annotation_is_typing_optional(context.dagster_type.typing_type) and (
             obj is None or annotation_for_storage_metadata(context.dagster_type.typing_type) and obj[0] is None
@@ -205,7 +208,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
                 self.dump_df_to_path(context=context, df=df, path=path, metadata=metadata)
 
     def load_from_path(
-        self, path: UPath, context: InputContext
+        self, path: "UPath", context: InputContext
     ) -> Union[
         pl.DataFrame,
         pl.LazyFrame,
@@ -260,7 +263,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             return get_polars_metadata(context, df) if df is not None else {"missing": MetadataValue.bool(True)}
 
     @staticmethod
-    def get_storage_options(path: UPath) -> dict:
+    def get_storage_options(path: "UPath") -> dict:
         storage_options = {}
 
         try:
@@ -270,7 +273,9 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
         return storage_options
 
-    def get_path_for_partition(self, context: Union[InputContext, OutputContext], path: UPath, partition: str) -> UPath:
+    def get_path_for_partition(
+        self, context: Union[InputContext, OutputContext], path: "UPath", partition: str
+    ) -> UPath:
         """Method for accessing the path for a given partition.
 
         Override this method if you want to use a different partitioning scheme
@@ -283,8 +288,8 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         """
         return path / partition
 
-    def get_missing_optional_input_log_message(self, context: InputContext, path: UPath) -> str:
+    def get_missing_optional_input_log_message(self, context: InputContext, path: "UPath") -> str:
         return f"Optional input {context.name} at {path} doesn't exist in the filesystem and won't be loaded!"
 
-    def get_optional_output_none_log_message(self, context: OutputContext, path: UPath) -> str:
+    def get_optional_output_none_log_message(self, context: OutputContext, path: "UPath") -> str:
         return f"The object for the optional output {context.name} is None, so it won't be saved to {path}!"
