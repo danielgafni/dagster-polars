@@ -37,6 +37,7 @@ dagster-gcp = { version = ">=0.19.5", optional = true }
 universal-pathlib = "^0.1.4"
 
 # pinned due to Dagster not working with Pendulum < 3.0.0
+# TODO: remove once Dagster supports Pendulum 3.0.0
 pendulum = "<3.0.0"
 
 [tool.poetry.extras]
