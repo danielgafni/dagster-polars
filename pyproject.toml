@@ -138,7 +138,7 @@ reportImportCycles = true
 reportWildcardImportFromLibrary = true
 reportUntypedFunctionDecorator = true
 reportUntypedClassDecorator = true
-reportUnnecessaryTypeIgnoreComment = true
+reportUnnecessaryTypeIgnoreComment = "warning"
 
 include = [
     "dagster_polars",
