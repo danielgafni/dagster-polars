@@ -126,7 +126,10 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             partition_by = context.metadata.get("partition_by")
 
             if partition_by is not None:
+                assert context.partition_key is not None, 'can\'t set "partition_by" for an asset without partitions'
+
                 delta_write_options["partition_by"] = partition_by
+                delta_write_options["partition_filters"] = [(partition_by, "=", context.partition_key)]
 
         if delta_write_options is not None:
             context.log.debug(f"Writing with delta_write_options: {pformat(delta_write_options)}")
