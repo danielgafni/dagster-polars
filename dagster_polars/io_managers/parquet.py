@@ -31,11 +31,16 @@ def get_pyarrow_dataset(path: "UPath", context: InputContext) -> pyarrow.dataset
     except AttributeError:
         pass
 
+    if context.metadata.get("partitioning") is not None:
+        context.log.warning(
+            f"partitioning' metadata value PolarsParquetIOManager is deprecated in favor of 'partition_by' (loading from {path})"
+        )
+
     ds = pyarrow.dataset.dataset(
         str(path),
         filesystem=fs,
         format=context.metadata.get("format", "parquet"),
-        partitioning=context.metadata.get("partitioning"),
+        partitioning=context.metadata.get("partitioning") or context.metadata.get("partition_by"),
         partition_base_dir=context.metadata.get("partition_base_dir"),
         exclude_invalid_files=context.metadata.get("exclude_invalid_files", True),
         ignore_prefixes=context.metadata.get("ignore_prefixes", [".", "_"]),
@@ -138,7 +143,7 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
                 key=["path", "to", "dataset"],
                 io_manager_key="polars_parquet_io_manager",
                 metadata={
-                    "partitioning": ["year", "month", "day"]
+                    "partition_by": ["year", "month", "day"]
                 }
             )
 
@@ -216,7 +221,11 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
             )
 
     def scan_df_from_path(  # type: ignore
-        self, path: "UPath", context: InputContext, with_metadata: Optional[bool] = False
+        self,
+        path: "UPath",
+        context: InputContext,
+        partition_key: Optional[str] = None,
+        with_metadata: Optional[bool] = False,
     ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
         assert context.metadata is not None
 
