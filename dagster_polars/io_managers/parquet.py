@@ -34,7 +34,7 @@ def get_pyarrow_dataset(path: "UPath", context: InputContext) -> pyarrow.dataset
     if context.metadata.get("partitioning") is not None:
         context.log.warning(
             f'"partitioning" metadata value for PolarsParquetIOManager is deprecated '
-            f"in favor of 'partition_by' (loading from {path})"
+            f'in favor of "partition_by" (loading from {path})'
         )
 
     ds = pyarrow.dataset.dataset(
