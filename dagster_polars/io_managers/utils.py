@@ -31,8 +31,8 @@ POLARS_LAZY_FRAME_ANNOTATIONS = [
 
 
 if sys.version >= "3.9":
-    POLARS_DATA_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])
-    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])
+    POLARS_DATA_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # ignore needed with Python < 3.9 type: ignore
+    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # ignore needed with Python < 3.9 type: ignore
 
 
 def cast_polars_single_value_to_dagster_table_types(val: Any):
