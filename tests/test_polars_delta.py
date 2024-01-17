@@ -106,7 +106,7 @@ def test_polars_delta_io_manager_overwrite_schema(
     polars_delta_io_manager: PolarsDeltaIOManager, dagster_instance: DagsterInstance
 ):
     @asset(io_manager_def=polars_delta_io_manager)
-    def overwrite_schema_asset_1() -> pl.DataFrame:  # type: ignore
+    def overwrite_schema_asset_1() -> pl.DataFrame:
         return pl.DataFrame(
             {
                 "a": [1, 2, 3],
@@ -162,7 +162,7 @@ def test_polars_delta_io_manager_overwrite_schema(
             overwrite_schema=True,
         )
     )
-    def overwrite_schema_asset_3() -> pl.DataFrame:  # type: ignore
+    def overwrite_schema_asset_3() -> pl.DataFrame:
         return pl.DataFrame(
             {
                 "a": [1, 2, 3],
@@ -201,8 +201,10 @@ def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIO
 
     @asset(io_manager_def=manager)
     def downstream_load_multiple_partitions(upstream_partitioned: Dict[str, pl.LazyFrame]) -> None:
-        for _df in upstream_partitioned.values():
+        for partition, _df in upstream_partitioned.items():
             assert isinstance(_df, pl.LazyFrame), type(_df)
+            assert (_df.collect().select(pl.col("partition").eq(partition).alias("eq")))["eq"].all()
+
         assert set(upstream_partitioned.keys()) == {"a", "b"}, upstream_partitioned.keys()
 
     for partition_key in ["a", "b"]:

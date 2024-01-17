@@ -37,7 +37,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     Features:
      - All features provided by :py:class:`~dagster_polars.BasePolarsUPathIOManager`.
      - All read/write options can be set via corresponding metadata or config parameters (metadata takes precedence).
-     - Supports native DeltaLake partitioning by storing different asset partitions in the same DeltaLake table. To enable this behavior, set the `partition_by` metadata value or config parameter (it's passed to `delta_write_options` of `pl.DataFrame.write_delta`). When using native DeltaLake partitioning, you are responsible for filtering correct partitions when reading the data in downstream assets.
+     - Supports native DeltaLake partitioning by storing different asset partitions in the same DeltaLake table. To enable this behavior, set the `partition_by` metadata value or config parameter (it's passed to `delta_write_options` of `pl.DataFrame.write_delta`). Automatically filters loaded partitions, unless `MultiPartitionsDefinition` are used. In this case you are responsible for filtering the partitions in the downstream asset, as it's non-trivial to do so in the IOManager.
      - Supports writing/reading custom metadata to/from `.dagster_polars_metadata/<version>.json` file in the DeltaLake table directory.
 
     Install `dagster-polars[delta]` to use this IOManager.
@@ -149,7 +149,10 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             metadata_path.write_text(json.dumps(metadata))
 
     def scan_df_from_path(  # type: ignore
-        self, path: "UPath", context: InputContext, with_metadata: Optional[bool] = False
+        self,
+        path: "UPath",
+        context: InputContext,
+        with_metadata: Optional[bool] = False,
     ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
         assert context.metadata is not None
 
@@ -164,6 +167,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             pyarrow_options=context.metadata.get("pyarrow_options"),
             storage_options=self.get_storage_options(path),
         )
+
         if with_metadata:
             version = self.get_delta_version_to_load(path, context)
             metadata_path = self.get_storage_metadata_path(path, version)
