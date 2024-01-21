@@ -37,6 +37,9 @@ deltalake = { version = ">=0.14.0", optional = true }
 dagster-gcp = { version = ">=0.19.5", optional = true }
 universal-pathlib = "^0.1.4"
 
+# pinned due to Dagster not working with Pendulum < 3.0.0
+# TODO: remove once Dagster supports Pendulum 3.0.0
+pendulum = "<3.0.0"
 
 [tool.poetry.extras]
 gcp = ["dagster-gcp"]
@@ -47,7 +50,6 @@ deltalake = ["deltalake"]
 hypothesis = "^6.89.0"
 pytest = "^7.3.1"
 deepdiff = "^6.3.0"
-isort = "^5.12.0"
 ruff = "^0.1.3"
 pyright = "^1.1.313"
 tox = "^4.6.0"
@@ -75,17 +77,12 @@ metadata = false
 [tool.poetry-dynamic-versioning.substitution]
 files = [
     "pyproject.toml",
-    "dagster_polars/_version.py"
+    "dagster_polars/version.py"
 ]
 
 [tool.pytest.ini_options]
 log_cli = true
 log_level = "INFO"
-
-[tool.isort]
-profile = "black"
-line_length = 120
-src_paths = ["dagster_polars", "tests"]
 
 [tool.black]
 line-length = 120
@@ -142,6 +139,7 @@ reportImportCycles = true
 reportWildcardImportFromLibrary = true
 reportUntypedFunctionDecorator = true
 reportUntypedClassDecorator = true
+reportUnnecessaryTypeIgnoreComment = "warning"
 
 include = [
     "dagster_polars",

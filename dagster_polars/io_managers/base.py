@@ -1,6 +1,19 @@
 import sys
 from abc import abstractmethod
-from typing import Any, Dict, Literal, Mapping, Optional, Tuple, Union, cast, get_args, get_origin, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Literal,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+    overload,
+)
 
 import polars as pl
 from dagster import (
@@ -11,9 +24,12 @@ from dagster import (
     OutputContext,
     UPathIOManager,
 )
-from dagster import _check as check
+from dagster import (
+    _check as check,
+)
+from dagster._annotations import experimental
+from dagster._core.storage.upath_io_manager import is_dict_type
 from pydantic.fields import Field, PrivateAttr
-from upath import UPath
 
 from dagster_polars.io_managers.utils import get_polars_metadata
 from dagster_polars.types import (
@@ -24,6 +40,9 @@ from dagster_polars.types import (
     LazyFrameWithMetadata,
     StorageMetadata,
 )
+
+if TYPE_CHECKING:
+    from upath import UPath
 
 POLARS_EAGER_FRAME_ANNOTATIONS = [
     pl.DataFrame,
@@ -59,11 +78,11 @@ POLARS_LAZY_FRAME_ANNOTATIONS = [
 
 
 if sys.version_info >= (3, 9):
-    POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
-    POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.DataFrame]])  # type: ignore
+    POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])
+    POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.DataFrame]])
 
-    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.LazyFrame])  # type: ignore
-    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.LazyFrame]])  # type: ignore
+    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.LazyFrame])
+    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.LazyFrame]])
 
 
 def annotation_is_typing_optional(annotation) -> bool:
@@ -79,14 +98,22 @@ def annotation_for_multiple_partitions(annotation) -> bool:
         return annotation_is_tuple(annotation) and get_origin(annotation) in (dict, Dict, Mapping)
     else:
         inner_annotation = get_args(annotation)[0]
-        return annotation_is_tuple(inner_annotation) and get_origin(inner_annotation) in (dict, Dict, Mapping)
+        return annotation_is_tuple(inner_annotation) and get_origin(inner_annotation) in (
+            dict,
+            Dict,
+            Mapping,
+        )
 
 
 def annotation_is_tuple_with_metadata(annotation) -> bool:
     if annotation_is_typing_optional(annotation):
         annotation = get_args(annotation)[0]
 
-    return annotation_is_tuple(annotation) and get_origin(get_args(annotation)[1]) in [dict, Dict, Mapping]
+    return annotation_is_tuple(annotation) and get_origin(get_args(annotation)[1]) in [
+        dict,
+        Dict,
+        Mapping,
+    ]
 
 
 def annotation_for_storage_metadata(annotation) -> bool:
@@ -102,24 +129,29 @@ def annotation_for_storage_metadata(annotation) -> bool:
         return annotation_is_tuple_with_metadata(annotation)
 
 
+@experimental
 class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
-    # This is a base class which doesn't define the specific format (parquet, csv, etc) to use
-    """
-    `IOManager` for `polars` based on the `UPathIOManager`.
+    """Base class for `dagster-polars` IOManagers.
+
+    Doesn't define a specific storage format.
+
+    To implement a specific storage format (parquet, csv, etc), inherit from this class and implement the `dump_df_to_path` and `scan_df_from_path` methods.
+
     Features:
-     - returns the correct type (`polars.DataFrame` or `polars.LazyFrame`) based on the type annotation
-     - handles `Optional` types by skipping loading missing inputs or `None` outputs
+     - All the features of :py:class:`~dagster.UPathIOManager` - works with local and remote filesystems (like S3), supports loading multiple partitions with respect to :py:class:`~dagster.PartitionMapping`, and more
+     - returns the correct type - `polars.DataFrame`, `polars.LazyFrame`, or other types defined in :py:mod:`dagster_polars.types` - based on the input type annotation (or `dagster.DagsterType`'s `typing_type`)
+     - handles `Nones` with `Optional` types by skipping loading missing inputs or saving `None` outputs
      - logs various metadata about the DataFrame - size, schema, sample, stats, ...
-     - the "columns" input metadata value can be used to select a subset of columns
-     - inherits all the features of the `UPathIOManager` - works with local and remote filesystems (like S3),
-         supports loading multiple partitions, ...
+     - the `"columns"` input metadata value can be used to select a subset of columns to load
     """
 
     base_dir: Optional[str] = Field(default=None, description="Base directory for storing files.")
 
-    _base_path: UPath = PrivateAttr()
+    _base_path: "UPath" = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
+        from upath import UPath
+
         self._base_path = (
             UPath(self.base_dir)
             if self.base_dir is not None
@@ -128,35 +160,74 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
     @abstractmethod
     def dump_df_to_path(
-        self, context: OutputContext, df: pl.DataFrame, path: UPath, metadata: Optional[StorageMetadata] = None
+        self,
+        context: OutputContext,
+        df: pl.DataFrame,
+        path: "UPath",
+        metadata: Optional[StorageMetadata] = None,
     ):
         ...
 
     @overload
     @abstractmethod
     def scan_df_from_path(
-        self, path: UPath, context: InputContext, with_metadata: Literal[None, False]
+        self, path: "UPath", context: InputContext, with_metadata: Literal[None, False]
     ) -> pl.LazyFrame:
         ...
 
     @overload
     @abstractmethod
     def scan_df_from_path(
-        self, path: UPath, context: InputContext, with_metadata: Literal[True]
+        self, path: "UPath", context: InputContext, with_metadata: Literal[True]
     ) -> LazyFrameWithMetadata:
         ...
 
     @abstractmethod
     def scan_df_from_path(
-        self, path: UPath, context: InputContext, with_metadata: Optional[bool] = False
+        self, path: "UPath", context: InputContext, with_metadata: Optional[bool] = False
     ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
         ...
+
+    # tmp fix until https://github.com/dagster-io/dagster/pull/19294 is merged
+    def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
+        # If no asset key, we are dealing with an op output which is always non-partitioned
+        if not context.has_asset_key or not context.has_asset_partitions:
+            path = self._get_path(context)
+            return self._load_single_input(path, context)
+        else:
+            asset_partition_keys = context.asset_partition_keys
+            if len(asset_partition_keys) == 0:
+                return None
+            elif len(asset_partition_keys) == 1:
+                paths = self._get_paths_for_partitions(context)
+                check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
+                path = next(iter(paths.values()))
+                backcompat_paths = self._get_multipartition_backcompat_paths(context)
+                backcompat_path = None if not backcompat_paths else next(iter(backcompat_paths.values()))
+
+                return self._load_partition_from_path(
+                    context=context,
+                    partition_key=asset_partition_keys[0],
+                    path=path,
+                    backcompat_path=backcompat_path,
+                )
+            else:  # we are dealing with multiple partitions of an asset
+                type_annotation = context.dagster_type.typing_type
+                if type_annotation != Any and not is_dict_type(type_annotation):
+                    check.failed(
+                        "Loading an input that corresponds to multiple partitions, but the"
+                        " type annotation on the op input is not a dict, Dict, Mapping, or"
+                        f" Any: is '{type_annotation}'."
+                    )
+
+                return self._load_multiple_inputs(context)
 
     def dump_to_path(
         self,
         context: OutputContext,
         obj: Union[pl.DataFrame, Optional[pl.DataFrame], Tuple[pl.DataFrame, Dict[str, Any]]],
-        path: UPath,
+        path: "UPath",
+        partition_key: Optional[str] = None,
     ):
         if annotation_is_typing_optional(context.dagster_type.typing_type) and (
             obj is None or annotation_for_storage_metadata(context.dagster_type.typing_type) and obj[0] is None
@@ -175,9 +246,13 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
                 self.dump_df_to_path(context=context, df=df, path=path, metadata=metadata)
 
     def load_from_path(
-        self, path: UPath, context: InputContext
+        self, context: InputContext, path: "UPath", partition_key: Optional[str] = None
     ) -> Union[
-        pl.DataFrame, pl.LazyFrame, Tuple[pl.DataFrame, Dict[str, Any]], Tuple[pl.LazyFrame, Dict[str, Any]], None
+        pl.DataFrame,
+        pl.LazyFrame,
+        Tuple[pl.DataFrame, Dict[str, Any]],
+        Tuple[pl.LazyFrame, Dict[str, Any]],
+        None,
     ]:
         if annotation_is_typing_optional(context.dagster_type.typing_type) and not path.exists():
             context.log.warning(self.get_missing_optional_input_log_message(context, path))
@@ -198,6 +273,22 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         if columns is not None:
             context.log.debug(f"Loading {columns=}")
             ldf = ldf.select(columns)
+
+        if (
+            context.upstream_output is not None
+            and context.upstream_output.asset_info is not None
+            and context.upstream_output.asset_info.partitions_def is not None
+            and context.upstream_output.metadata is not None
+            and partition_key is not None
+        ):
+            partition_by = context.upstream_output.metadata.get("partition_by")
+
+            # we can only support automatically filtering by 1 column
+            # otherwise we would have been dealing with a multi-partition key
+            # which is not straightforward to filter by
+            if partition_by is not None and isinstance(partition_by, str):
+                context.log.debug(f"Filtering by {partition_by}=={partition_key}")
+                ldf = ldf.filter(pl.col(partition_by) == partition_key)
 
         if context.dagster_type.typing_type in POLARS_EAGER_FRAME_ANNOTATIONS:
             if not return_storage_metadata:
@@ -226,18 +317,21 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             return get_polars_metadata(context, df) if df is not None else {"missing": MetadataValue.bool(True)}
 
     @staticmethod
-    def get_storage_options(path: UPath) -> dict:
+    def get_storage_options(path: "UPath") -> dict:
         storage_options = {}
 
         try:
-            storage_options.update(path._kwargs.copy())
+            storage_options.update(path.storage_options.copy())
         except AttributeError:
             pass
 
         return storage_options
 
-    def get_path_for_partition(self, context: Union[InputContext, OutputContext], path: UPath, partition: str) -> UPath:
-        """
+    def get_path_for_partition(
+        self, context: Union[InputContext, OutputContext], path: "UPath", partition: str
+    ) -> "UPath":
+        """Method for accessing the path for a given partition.
+
         Override this method if you want to use a different partitioning scheme
         (for example, if the saving function handles partitioning instead).
         The extension will be added later.
@@ -248,35 +342,58 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         """
         return path / partition
 
-    # this method is no longer needed since `get_path_for_partition` was added to `UPathIOManager`
-    # keeping it commented for a while just in case
-
-    # def _get_paths_for_partitions(self, context: Union[InputContext, OutputContext]) -> Dict[str, "UPath"]:
-    #     """Returns a dict of partition_keys into I/O paths for a given context."""
-    #     if not context.has_asset_partitions:
-    #         raise TypeError(
-    #             f"Detected {context.dagster_type.typing_type} input type " "but the asset is not partitioned"
-    #         )
-    #
-    #     def _formatted_multipartitioned_path(partition_key: MultiPartitionKey) -> str:
-    #         ordered_dimension_keys = [
-    #             key[1] for key in sorted(partition_key.keys_by_dimension.items(), key=lambda x: x[0])
-    #         ]
-    #         return "/".join(ordered_dimension_keys)
-    #
-    #     formatted_partition_keys = [
-    #         _formatted_multipartitioned_path(pk) if isinstance(pk, MultiPartitionKey) else pk
-    #         for pk in context.asset_partition_keys
-    #     ]
-    #
-    #     asset_path = self._get_path_without_extension(context)
-    #     return {
-    #         partition: self._with_extension(self.get_path_for_partition(context, asset_path, partition))
-    #         for partition in formatted_partition_keys
-    #     }
-
-    def get_missing_optional_input_log_message(self, context: InputContext, path: UPath) -> str:
+    def get_missing_optional_input_log_message(self, context: InputContext, path: "UPath") -> str:
         return f"Optional input {context.name} at {path} doesn't exist in the filesystem and won't be loaded!"
 
-    def get_optional_output_none_log_message(self, context: OutputContext, path: UPath) -> str:
+    def get_optional_output_none_log_message(self, context: OutputContext, path: "UPath") -> str:
         return f"The object for the optional output {context.name} is None, so it won't be saved to {path}!"
+
+    # this method is overridden because the default one does not pass partition_key to load_from_path
+    def _load_partition_from_path(
+        self,
+        context: InputContext,
+        partition_key: str,
+        path: "UPath",
+        backcompat_path: Optional["UPath"] = None,
+    ) -> Any:
+        """1. Try to load the partition from the normal path.
+        2. If it was not found, try to load it from the backcompat path.
+        3. If allow_missing_partitions metadata is True, skip the partition if it was not found in any of the paths.
+        Otherwise, raise an error.
+
+        Args:
+            context (InputContext): IOManager Input context
+            partition_key (str): the partition key corresponding to the partition being loaded
+            path (UPath): The path to the partition.
+            backcompat_path (Optional[UPath]): The path to the partition in the backcompat location.
+
+        Returns:
+            Any: The object loaded from the partition.
+        """
+        allow_missing_partitions = (
+            context.metadata.get("allow_missing_partitions", False) if context.metadata is not None else False
+        )
+
+        try:
+            context.log.debug(self.get_loading_input_partition_log_message(path, partition_key))
+            obj = self.load_from_path(context=context, path=path, partition_key=partition_key)
+            return obj
+        except FileNotFoundError as e:
+            if backcompat_path is not None:
+                try:
+                    obj = self.load_from_path(context=context, path=path, partition_key=partition_key)
+                    context.log.debug(
+                        f"File not found at {path}. Loaded instead from backcompat path:" f" {backcompat_path}"
+                    )
+                    return obj
+                except FileNotFoundError as e:
+                    if allow_missing_partitions:
+                        context.log.warning(self.get_missing_partition_log_message(partition_key))
+                        return None
+                    else:
+                        raise e
+            if allow_missing_partitions:
+                context.log.warning(self.get_missing_partition_log_message(partition_key))
+                return None
+            else:
+                raise e

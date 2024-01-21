@@ -1,36 +1,47 @@
 import json
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
-import fsspec
 import polars as pl
 import pyarrow as pa
 import pyarrow.dataset
 import pyarrow.parquet
 from dagster import InputContext, OutputContext
+from dagster._annotations import experimental
 from packaging.version import Version
 from pyarrow import Table
-from upath import UPath
 
-from dagster_polars.constants import DAGSTER_POLARS_STORAGE_METADATA_KEY
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 from dagster_polars.types import LazyFrameWithMetadata, StorageMetadata
 
+if TYPE_CHECKING:
+    import fsspec
+    from upath import UPath
 
-def get_pyarrow_dataset(path: UPath, context: InputContext) -> pyarrow.dataset.Dataset:
+
+DAGSTER_POLARS_STORAGE_METADATA_KEY = "dagster_polars_metadata"
+
+
+def get_pyarrow_dataset(path: "UPath", context: InputContext) -> pyarrow.dataset.Dataset:
     assert context.metadata is not None
 
     fs: Union[fsspec.AbstractFileSystem, None] = None
 
     try:
-        fs = path._accessor._fs
+        fs = path.fs
     except AttributeError:
         pass
+
+    if context.metadata.get("partitioning") is not None:
+        context.log.warning(
+            f'"partitioning" metadata value for PolarsParquetIOManager is deprecated '
+            f'in favor of "partition_by" (loading from {path})'
+        )
 
     ds = pyarrow.dataset.dataset(
         str(path),
         filesystem=fs,
         format=context.metadata.get("format", "parquet"),
-        partitioning=context.metadata.get("partitioning"),
+        partitioning=context.metadata.get("partitioning") or context.metadata.get("partition_by"),
         partition_base_dir=context.metadata.get("partition_base_dir"),
         exclude_invalid_files=context.metadata.get("exclude_invalid_files", True),
         ignore_prefixes=context.metadata.get("ignore_prefixes", [".", "_"]),
@@ -39,9 +50,9 @@ def get_pyarrow_dataset(path: UPath, context: InputContext) -> pyarrow.dataset.D
     return ds
 
 
-def scan_parquet_legacy(path: UPath, context: InputContext) -> pl.LazyFrame:
-    """
-    Scan a parquet file and return a lazy frame. Uses pyarrow.
+def scan_parquet_legacy(path: "UPath", context: InputContext) -> pl.LazyFrame:
+    """Scan a parquet file and return a lazy frame (uses pyarrow).
+
     :param path:
     :param context:
     :return:
@@ -56,9 +67,9 @@ def scan_parquet_legacy(path: UPath, context: InputContext) -> pl.LazyFrame:
     return ldf
 
 
-def scan_parquet(path: UPath, context: InputContext) -> pl.LazyFrame:
-    """
-    Scan a parquet file and return a lazy frame. Uses polars native reader.
+def scan_parquet(path: "UPath", context: InputContext) -> pl.LazyFrame:
+    """Scan a parquet file and return a lazy frame (uses polars native reader).
+
     :param path:
     :param context:
     :return:
@@ -91,19 +102,83 @@ def scan_parquet(path: UPath, context: InputContext) -> pl.LazyFrame:
     return pl.scan_parquet(str(path), storage_options=storage_options, **kwargs)  # type: ignore
 
 
+@experimental
 class PolarsParquetIOManager(BasePolarsUPathIOManager):
-    extension: str = ".parquet"
+    """Implements reading and writing Polars DataFrames in Apache Parquet format.
+
+    Features:
+     - All features provided by :py:class:`~dagster_polars.BasePolarsUPathIOManager`.
+     - All read/write options can be set via corresponding metadata or config parameters (metadata takes precedence).
+     - Supports reading partitioned Parquet datasets (for example, often produced by Spark).
+     - Supports reading/writing custom metadata in the Parquet file's schema as json-serialized bytes at `"dagster_polars_metadata"` key.
+
+    Examples:
+
+        .. code-block:: python
+
+            from dagster import asset
+            from dagster_polars import PolarsParquetIOManager
+            import polars as pl
+
+            @asset(
+                io_manager_key="polars_parquet_io_manager",
+                key_prefix=["my_dataset"]
+            )
+            def my_asset() -> pl.DataFrame:  # data will be stored at <base_dir>/my_dataset/my_asset.parquet
+                ...
+
+            defs = Definitions(
+                assets=[my_table],
+                resources={
+                    "polars_parquet_io_manager": PolarsParquetIOManager(base_dir="s3://my-bucket/my-dir")
+                }
+            )
+
+        Reading partitioned Parquet datasets:
+
+        .. code-block:: python
+
+            from dagster import SourceAsset
+
+            my_asset = SourceAsset(
+                key=["path", "to", "dataset"],
+                io_manager_key="polars_parquet_io_manager",
+                metadata={
+                    "partition_by": ["year", "month", "day"]
+                }
+            )
+
+        Storing custom metadata in the Parquet file schema (this metadata can be read outside of Dagster with a helper function :py:meth:`dagster_polars.PolarsParquetIOManager.read_parquet_metadata`):
+
+        .. code-block:: python
+
+            from dagster_polars import DataFrameWithMetadata
+
+
+            @asset(
+                io_manager_key="polars_parquet_io_manager",
+            )
+            def upstream() -> DataFrameWithMetadata:
+                return pl.DataFrame(...), {"my_custom_metadata": "my_custom_value"}
+
+
+            @asset(
+                io_manager_key="polars_parquet_io_manager",
+            )
+            def downsteam(upstream: DataFrameWithMetadata):
+                df, metadata = upstream
+                assert metadata["my_custom_metadata"] == "my_custom_value"
+    """
+
+    extension: str = ".parquet"  # type: ignore
     use_legacy_reader: bool = False
 
-    assert BasePolarsUPathIOManager.__doc__ is not None
-    __doc__ = (
-        BasePolarsUPathIOManager.__doc__
-        + """\nWorks with Parquet files.
-    All read/write arguments can be passed via corresponding metadata values."""
-    )
-
     def dump_df_to_path(
-        self, context: OutputContext, df: pl.DataFrame, path: UPath, metadata: Optional[StorageMetadata] = None
+        self,
+        context: OutputContext,
+        df: pl.DataFrame,
+        path: "UPath",
+        metadata: Optional[StorageMetadata] = None,
     ):
         assert context.metadata is not None
 
@@ -146,8 +221,12 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
                 **(pyarrow_options or {}),
             )
 
-    def scan_df_from_path(
-        self, path: UPath, context: InputContext, with_metadata: Optional[bool] = False
+    def scan_df_from_path(  # type: ignore
+        self,
+        path: "UPath",
+        context: InputContext,
+        partition_key: Optional[str] = None,
+        with_metadata: Optional[bool] = False,
     ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
         assert context.metadata is not None
 
@@ -171,10 +250,10 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
             return ldf, metadata
 
     @classmethod
-    def read_parquet_metadata(cls, path: UPath) -> StorageMetadata:
-        """
-        Just a helper method to read metadata from a parquet file.
-        Is actually not used internally.
+    def read_parquet_metadata(cls, path: "UPath") -> StorageMetadata:
+        """Just a helper method to read metadata from a parquet file.
+
+        Is not used internally, but is helpful for reading Parquet metadata from outside of Dagster.
         :param path:
         :return:
         """

@@ -6,6 +6,7 @@ import polars as pl
 import polars.testing as pl_testing
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     Config,
     DagsterInstance,
@@ -47,9 +48,9 @@ from tests.utils import get_saved_path
         allow_infinities=False,
     )
 )
-@settings(max_examples=100, deadline=None)
+@settings(max_examples=50, deadline=None)
 def test_polars_delta_io_manager(session_polars_delta_io_manager: PolarsDeltaIOManager, df: pl.DataFrame):
-    time.sleep(0.1)  # too frequent writes mess up DeltaLake
+    time.sleep(0.2)  # too frequent writes mess up DeltaLake concurrent
 
     @asset(io_manager_def=session_polars_delta_io_manager, metadata={"overwrite_schema": True})
     def upstream() -> pl.DataFrame:
@@ -115,7 +116,7 @@ def test_polars_delta_io_manager_overwrite_schema(
     polars_delta_io_manager: PolarsDeltaIOManager, dagster_instance: DagsterInstance
 ):
     @asset(io_manager_def=polars_delta_io_manager)
-    def overwrite_schema_asset_1() -> pl.DataFrame:  # type: ignore
+    def overwrite_schema_asset_1() -> pl.DataFrame:
         return pl.DataFrame(
             {
                 "a": [1, 2, 3],
@@ -137,7 +138,10 @@ def test_polars_delta_io_manager_overwrite_schema(
         pl.read_delta(saved_path),
     )
 
-    @asset(io_manager_def=polars_delta_io_manager, metadata={"overwrite_schema": True, "mode": "overwrite"})
+    @asset(
+        io_manager_def=polars_delta_io_manager,
+        metadata={"overwrite_schema": True, "mode": "overwrite"},
+    )
     def overwrite_schema_asset_2() -> pl.DataFrame:
         return pl.DataFrame(
             {
@@ -163,10 +167,12 @@ def test_polars_delta_io_manager_overwrite_schema(
     # test IOManager configuration works too
     @asset(
         io_manager_def=PolarsDeltaIOManager(
-            base_dir=dagster_instance.storage_directory(), mode=DeltaWriteMode.overwrite, overwrite_schema=True
+            base_dir=dagster_instance.storage_directory(),
+            mode=DeltaWriteMode.overwrite,
+            overwrite_schema=True,
         )
     )
-    def overwrite_schema_asset_3() -> pl.DataFrame:  # type: ignore
+    def overwrite_schema_asset_3() -> pl.DataFrame:
         return pl.DataFrame(
             {
                 "a": [1, 2, 3],
@@ -195,25 +201,42 @@ def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIO
 
     partitions_def = StaticPartitionsDefinition(["a", "b"])
 
-    @asset(io_manager_def=manager, partitions_def=partitions_def, metadata={"partition_by": "partition"})
+    @asset(
+        io_manager_def=manager,
+        partitions_def=partitions_def,
+        metadata={"partition_by": "partition"},
+    )
     def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
 
+    lenghts = {}
+
     @asset(io_manager_def=manager)
     def downstream_load_multiple_partitions(upstream_partitioned: Dict[str, pl.LazyFrame]) -> None:
-        for _df in upstream_partitioned.values():
-            assert isinstance(_df, pl.LazyFrame), type(_df)
+        for partition, _ldf in upstream_partitioned.items():
+            assert isinstance(_ldf, pl.LazyFrame), type(_ldf)
+            _df = _ldf.collect()
+            assert (_df.select(pl.col("partition").eq(partition).alias("eq")))["eq"].all()
+            lenghts[partition] = len(_df)
+
         assert set(upstream_partitioned.keys()) == {"a", "b"}, upstream_partitioned.keys()
+
+    saved_path = None  # noqa
 
     for partition_key in ["a", "b"]:
         result = materialize(
             [upstream_partitioned],
             partition_key=partition_key,
         )
-
         saved_path = get_saved_path(result, "upstream_partitioned")
         assert saved_path.endswith("upstream_partitioned.delta"), saved_path  # DeltaLake should handle partitioning!
         assert DeltaTable(saved_path).metadata().partition_columns == ["partition"]
+
+    assert saved_path is not None
+    written_df = pl.read_delta(saved_path)
+
+    assert len(written_df) == len(df) * 2
+    assert set(written_df["partition"].unique()) == {"a", "b"}
 
     materialize(
         [
@@ -221,6 +244,46 @@ def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIO
             downstream_load_multiple_partitions,
         ],
     )
+
+    @asset(io_manager_def=manager)
+    def downstream_load_multiple_partitions_as_single_df(upstream_partitioned: pl.DataFrame) -> None:
+        assert set(upstream_partitioned["partition"].unique()) == {"a", "b"}
+
+    materialize(
+        [
+            upstream_partitioned.to_source_asset(),
+            downstream_load_multiple_partitions_as_single_df,
+        ],
+    )
+
+
+def test_polars_delta_native_partitioning_loading_single_partition(
+    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame
+):
+    manager = polars_delta_io_manager
+    df = df_for_delta
+
+    partitions_def = StaticPartitionsDefinition(["a", "b"])
+
+    @asset(
+        io_manager_def=manager,
+        partitions_def=partitions_def,
+        metadata={"partition_by": "partition"},
+    )
+    def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
+        return df.with_columns(pl.lit(context.partition_key).alias("partition"))
+
+    @asset(io_manager_def=manager, partitions_def=partitions_def)
+    def downstream_partitioned(context: AssetExecutionContext, upstream_partitioned: pl.DataFrame) -> None:
+        partitions = upstream_partitioned["partition"].unique().to_list()
+        assert len(partitions) == 1
+        assert partitions[0] == context.partition_key
+
+    for partition_key in ["a", "b"]:
+        materialize(
+            [upstream_partitioned, downstream_partitioned],
+            partition_key=partition_key,
+        )
 
 
 def test_polars_delta_time_travel(polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame):

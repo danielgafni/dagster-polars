@@ -5,7 +5,14 @@ from pprint import pformat
 from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
 import polars as pl
-from dagster import MetadataValue, OutputContext, TableColumn, TableMetadataValue, TableRecord, TableSchema
+from dagster import (
+    MetadataValue,
+    OutputContext,
+    TableColumn,
+    TableMetadataValue,
+    TableRecord,
+    TableSchema,
+)
 
 POLARS_DATA_FRAME_ANNOTATIONS = [
     Any,
@@ -24,14 +31,14 @@ POLARS_LAZY_FRAME_ANNOTATIONS = [
 
 
 if sys.version >= "3.9":
-    POLARS_DATA_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
-    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  # type: ignore
+    POLARS_DATA_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  #  type: ignore # ignore needed with Python < 3.9
+    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])  #  type: ignore # ignore needed with Python < 3.9
 
 
 def cast_polars_single_value_to_dagster_table_types(val: Any):
     if val is None:
         return ""
-    elif isinstance(val, (date, datetime, time, timedelta)):
+    elif isinstance(val, (date, datetime, time, timedelta, bytes)):
         return str(val)
     elif isinstance(val, (list, dict)):
         # default=str because sometimes the object can be a list of datetimes or something like this
@@ -74,10 +81,7 @@ def get_metadata_table_and_schema(
         table = MetadataValue.table(
             records=[
                 TableRecord(
-                    {
-                        col: cast_polars_single_value_to_dagster_table_types(df_sample_dict[i][col])  # type: ignore
-                        for col in df.columns
-                    }
+                    {col: cast_polars_single_value_to_dagster_table_types(df_sample_dict[i][col]) for col in df.columns}
                 )
                 for i in range(len(df_sample))
             ],
