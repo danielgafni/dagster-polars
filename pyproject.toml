@@ -3,7 +3,8 @@ name = "dagster-polars"
 version = "0.0.0"
 description = "Dagster integration library for Polars"
 authors = [
-    "Daniel Gafni <danielgafni16@gmail.com>"
+    "Daniel Gafni <danielgafni16@gmail.com>",
+    "Edgar Bahilo <edgbr@proton.me>"
 ]
 readme = "README.md"
 packages = [{include = "dagster_polars"}]
@@ -28,11 +29,11 @@ license = "Apache-2.0"
 [tool.poetry.dependencies]
 python = "^3.8"
 dagster = "^1.4.0"
-polars = ">=0.17.0"
+polars = ">=0.20.1"
 pyarrow = ">=8.0.0"
 typing-extensions = "^4.7.1"
 
-deltalake = { version = ">=0.10.0", optional = true }
+deltalake = { version = ">=0.14.0", optional = true }
 dagster-gcp = { version = ">=0.19.5", optional = true }
 universal-pathlib = "^0.1.4"
 

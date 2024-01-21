@@ -43,3 +43,5 @@ repos:
         entry: pyright .
         language: system
         pass_filenames: false
+        language: system
+        pass_filenames: false
