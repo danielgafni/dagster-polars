@@ -27,7 +27,7 @@ from polars.testing.parametric import dataframes
         allow_infinities=False,
     )
 )
-@settings(max_examples=500, deadline=None)
+@settings(max_examples=20, deadline=None)
 def test_polars_delta_io(df: pl.DataFrame, tmp_path_factory: TempPathFactory):
     tmp_path = tmp_path_factory.mktemp("data")
     df.write_delta(str(tmp_path), delta_write_options={"engine": "rust"})

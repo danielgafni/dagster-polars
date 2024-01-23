@@ -186,6 +186,89 @@ def test_polars_delta_io_manager_overwrite_schema(
     )
 
 
+def test_polars_delta_io_manager_overwrite_schema_lazy(
+    polars_delta_io_manager: PolarsDeltaIOManager, dagster_instance: DagsterInstance
+):
+    @asset(io_manager_def=polars_delta_io_manager)
+    def overwrite_schema_asset_1() -> pl.LazyFrame:
+        return pl.LazyFrame(
+            {
+                "a": [1, 2, 3],
+            }
+        )
+
+    result = materialize(
+        [overwrite_schema_asset_1],
+    )
+
+    saved_path = get_saved_path(result, "overwrite_schema_asset_1")
+
+    pl_testing.assert_frame_equal(
+        pl.DataFrame(
+            {
+                "a": [1, 2, 3],
+            }
+        ),
+        pl.read_delta(saved_path),
+    )
+
+    @asset(
+        io_manager_def=polars_delta_io_manager,
+        metadata={"overwrite_schema": True, "mode": "overwrite"},
+    )
+    def overwrite_schema_asset_2() -> pl.LazyFrame:
+        return pl.LazyFrame(
+            {
+                "b": ["1", "2", "3"],
+            }
+        )
+
+    result = materialize(
+        [overwrite_schema_asset_2],
+    )
+
+    saved_path = get_saved_path(result, "overwrite_schema_asset_2")
+
+    pl_testing.assert_frame_equal(
+        pl.DataFrame(
+            {
+                "b": ["1", "2", "3"],
+            }
+        ),
+        pl.read_delta(saved_path),
+    )
+
+    # test IOManager configuration works too
+    @asset(
+        io_manager_def=PolarsDeltaIOManager(
+            base_dir=dagster_instance.storage_directory(),
+            mode=DeltaWriteMode.overwrite,
+            overwrite_schema=True,
+        )
+    )
+    def overwrite_schema_asset_3() -> pl.LazyFrame:
+        return pl.LazyFrame(
+            {
+                "a": [1, 2, 3],
+            }
+        )
+
+    result = materialize(
+        [overwrite_schema_asset_3],
+    )
+
+    saved_path = get_saved_path(result, "overwrite_schema_asset_3")
+
+    pl_testing.assert_frame_equal(
+        pl.DataFrame(
+            {
+                "a": [1, 2, 3],
+            }
+        ),
+        pl.read_delta(saved_path),
+    )
+
+
 def test_polars_delta_native_partitioning(polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame):
     manager = polars_delta_io_manager
     df = df_for_delta

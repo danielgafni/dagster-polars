@@ -27,7 +27,6 @@ from dagster import (
 from dagster import (
     _check as check,
 )
-from dagster._annotations import experimental
 from dagster._core.storage.upath_io_manager import is_dict_type
 from pydantic.fields import Field, PrivateAttr
 
@@ -129,13 +128,12 @@ def annotation_for_storage_metadata(annotation) -> bool:
         return annotation_is_tuple_with_metadata(annotation)
 
 
-@experimental
 class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     """Base class for `dagster-polars` IOManagers.
 
     Doesn't define a specific storage format.
 
-    To implement a specific storage format (parquet, csv, etc), inherit from this class and implement the `dump_df_to_path` and `scan_df_from_path` methods.
+    To implement a specific storage format (parquet, csv, etc), inherit from this class and implement the `write_to_path` and `scan_from_path` methods.
 
     Features:
      - All the features of :py:class:`~dagster.UPathIOManager` - works with local and remote filesystems (like S3), supports loading multiple partitions with respect to :py:class:`~dagster.PartitionMapping`, and more
@@ -159,10 +157,20 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         )
 
     @abstractmethod
-    def dump_df_to_path(
+    def write_df_to_path(
         self,
         context: OutputContext,
         df: pl.DataFrame,
+        path: "UPath",
+        metadata: Optional[StorageMetadata] = None,
+    ):
+        ...
+
+    @abstractmethod
+    def sink_df_to_path(
+        self,
+        context: OutputContext,
+        df: pl.LazyFrame,
         path: "UPath",
         metadata: Optional[StorageMetadata] = None,
     ):
@@ -225,25 +233,53 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     def dump_to_path(
         self,
         context: OutputContext,
-        obj: Union[pl.DataFrame, Optional[pl.DataFrame], Tuple[pl.DataFrame, Dict[str, Any]]],
+        obj: Union[pl.DataFrame, 
+                   Optional[pl.DataFrame], 
+                   Tuple[pl.DataFrame, Dict[str, Any]],
+                   pl.LazyFrame, 
+                   Optional[pl.LazyFrame], 
+                   Tuple[pl.LazyFrame, Dict[str, Any]],
+                   ],
         path: "UPath",
         partition_key: Optional[str] = None,
     ):
-        if annotation_is_typing_optional(context.dagster_type.typing_type) and (
-            obj is None or annotation_for_storage_metadata(context.dagster_type.typing_type) and obj[0] is None
+        typing_type = context.dagster_type.typing_type
+        
+        if annotation_is_typing_optional(typing_type) and (
+            obj is None or annotation_for_storage_metadata(typing_type) and obj[0] is None
         ):
             context.log.warning(self.get_optional_output_none_log_message(context, path))
             return
         else:
             assert obj is not None, "output should not be None if it's type is not Optional"
-            if not annotation_for_storage_metadata(context.dagster_type.typing_type):
-                obj = cast(pl.DataFrame, obj)
-                df = obj
-                self.dump_df_to_path(context=context, df=df, path=path)
+            if not annotation_for_storage_metadata(typing_type):
+                if typing_type == pl.DataFrame:
+                    obj = cast(pl.DataFrame, obj)
+                    df = obj
+                    self.write_df_to_path(context=context, df=df, path=path)
+                elif typing_type == pl.LazyFrame:
+                    obj = cast(pl.LazyFrame, obj)
+                    df = obj
+                    self.sink_df_to_path(context=context, df=df, path=path)
+                else:
+                    raise NotImplementedError
             else:
-                obj = cast(Tuple[pl.DataFrame, Dict[str, Any]], obj)
-                df, metadata = obj
-                self.dump_df_to_path(context=context, df=df, path=path, metadata=metadata)
+                if not annotation_is_typing_optional(typing_type):
+                    frame_type = get_args(typing_type)[0]
+                else:
+                    frame_type = get_args(get_args(typing_type)[0])[0]
+                
+                if frame_type == pl.DataFrame:
+                    obj = cast(Tuple[pl.DataFrame, Dict[str, Any]], obj)
+                    df, metadata = obj
+                    self.write_df_to_path(context=context, df=df, path=path, metadata=metadata)
+                elif frame_type == pl.LazyFrame:
+                    obj = cast(Tuple[pl.LazyFrame, Dict[str, Any]], obj)
+                    df, metadata = obj
+                    self.sink_df_to_path(context=context, df=df, path=path, metadata=metadata)
+                else:
+                    raise NotImplementedError
+                    
 
     def load_from_path(
         self, context: InputContext, path: "UPath", partition_key: Optional[str] = None
@@ -306,14 +342,14 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         else:
             raise NotImplementedError(f"Can't load object for type annotation {context.dagster_type.typing_type}")
 
-    def get_metadata(self, context: OutputContext, obj: pl.DataFrame) -> Dict[str, MetadataValue]:
+    def get_metadata(self, context: OutputContext, obj: Union[pl.DataFrame, pl.LazyFrame, None]) -> Dict[str, MetadataValue]:
         if obj is None:
             return {"missing": MetadataValue.bool(True)}
         else:
             if annotation_for_storage_metadata(context.dagster_type.typing_type):
                 df = obj[0]
             else:
-                df = obj
+                df = obj    
             return get_polars_metadata(context, df) if df is not None else {"missing": MetadataValue.bool(True)}
 
     @staticmethod

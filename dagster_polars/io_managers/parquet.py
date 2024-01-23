@@ -6,7 +6,6 @@ import pyarrow as pa
 import pyarrow.dataset
 import pyarrow.parquet
 from dagster import InputContext, OutputContext
-from dagster._annotations import experimental
 from packaging.version import Version
 from pyarrow import Table
 
@@ -89,8 +88,8 @@ def scan_parquet(path: "UPath", context: InputContext) -> pl.LazyFrame:
         cache=context.metadata.get("cache", True),
         parallel=context.metadata.get("parallel", "auto"),
         rechunk=context.metadata.get("rechunk", True),
-        row_count_name=context.metadata.get("row_count_name", None),
-        row_count_offset=context.metadata.get("row_count_offset", 0),
+        row_index_name=context.metadata.get("row_index_name", None),
+        row_index_offset=context.metadata.get("row_index_offset", 0),
         low_memory=context.metadata.get("low_memory", False),
         use_statistics=context.metadata.get("use_statistics", True),
     )
@@ -102,7 +101,6 @@ def scan_parquet(path: "UPath", context: InputContext) -> pl.LazyFrame:
     return pl.scan_parquet(str(path), storage_options=storage_options, **kwargs)  # type: ignore
 
 
-@experimental
 class PolarsParquetIOManager(BasePolarsUPathIOManager):
     """Implements reading and writing Polars DataFrames in Apache Parquet format.
 
@@ -173,7 +171,27 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
     extension: str = ".parquet"  # type: ignore
     use_legacy_reader: bool = False
 
-    def dump_df_to_path(
+    def sink_df_to_path(
+        self,
+        context: OutputContext,
+        df: pl.LazyFrame,
+        path: "UPath",
+        metadata: Optional[StorageMetadata] = None,
+    ):
+        assert context.metadata is not None
+        
+        compression = context.metadata.get("compression", "zstd")
+        compression_level = context.metadata.get("compression_level")
+        statistics = context.metadata.get("statistics", False)
+        row_group_size = context.metadata.get("row_group_size")
+        pyarrow_options = context.metadata.get("pyarrow_options", None)
+        
+        if context.metadata is None:
+            raise ValueError("You need to provide metadata to the asset.")
+        streaming = context.metadata.get("streaming", False)
+        return self.write_df_to_path(context, df.collect(streaming=streaming), path, metadata)
+
+    def write_df_to_path(
         self,
         context: OutputContext,
         df: pl.DataFrame,
