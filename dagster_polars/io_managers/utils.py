@@ -75,9 +75,8 @@ def get_table_metadata(
     schema: TableSchema,
     n_rows: Optional[int] = 5,
     fraction: Optional[float] = None,
-
 ) -> Optional[TableMetadataValue]:
-    """Takes the polars DataFrame and takes a sample of the data and returns it as TableMetaDataValue. 
+    """Takes the polars DataFrame and takes a sample of the data and returns it as TableMetaDataValue.
     A lazyframe this is not possible without doing possible a very costly operation.
 
     Args:
@@ -93,7 +92,7 @@ def get_table_metadata(
     assert not fraction and n_rows, "only one of n_rows and frac should be set"
     n_rows = min(n_rows, len(df))
     df_sample = df.sample(n=n_rows, fraction=fraction, shuffle=True)
-    
+
     try:
         # this can fail sometimes
         # because TableRecord doesn't support all python types
@@ -122,7 +121,6 @@ def get_table_metadata(
 def get_polars_df_stats(
     df: pl.DataFrame,
 ) -> Dict[str, Dict[str, Union[str, int, float]]]:
-
     describe = df.describe().fill_null(pl.lit("null"))
     return {
         col: {stat: describe[col][i] for i, stat in enumerate(describe["describe"].to_list())}
@@ -143,11 +141,11 @@ def get_polars_metadata(context: OutputContext, df: Union[pl.DataFrame, pl.LazyF
         Dict[str, MetadataValue]: metadata about df
     """
     assert context.metadata is not None
-    
+
     schema = get_metadata_schema(df, descriptions=context.metadata.get("descriptions"))
-    
+
     metadata = {}
-    
+
     if isinstance(df, pl.DataFrame):
         table = get_table_metadata(
             context=context,

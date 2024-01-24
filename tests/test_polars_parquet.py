@@ -34,7 +34,6 @@ def test_polars_parquet_io_manager_read_write(
     os.remove(saved_path)  # cleanup manually because of hypothesis
 
 
-
 # allowed_dtypes=[pl.List(inner) for inner in
 # list(pl.TEMPORAL_DTYPES | pl.FLOAT_DTYPES | pl.INTEGER_DTYPES) + [pl.Boolean, pl.Utf8]]
 @given(df=dataframes(excluded_dtypes=[pl.Categorical], min_size=5))
@@ -49,11 +48,11 @@ def test_polars_parquet_io_manager_read_write_full_lazy(
     @asset(io_manager_def=session_polars_parquet_io_manager)
     def downstream(upstream: pl.LazyFrame) -> pl.LazyFrame:
         return upstream
-    
+
     @asset(io_manager_def=session_polars_parquet_io_manager)
     def downstream2(downstream: pl.LazyFrame) -> pl.LazyFrame:
         return downstream
-    
+
     result = materialize(
         [upstream, downstream, downstream2],
     )

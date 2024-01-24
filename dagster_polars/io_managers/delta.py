@@ -178,8 +178,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                         f" type annotation on the op input is not a dict, Dict, Mapping, one of {SINGLE_LOADING_TYPES},"
                         " or Any: is '{type_annotation}'."
                     )
-                    
-                    
+
     def sink_df_to_path(
         self,
         context: OutputContext,
@@ -192,22 +191,25 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         streaming = context.metadata.get("streaming", False)
         return self.write_df_to_path(context, df.collect(streaming=streaming), path, metadata)
 
-
     def write_df_to_path(
         self,
         context: OutputContext,
         df: pl.DataFrame,
         path: "UPath",
-        metadata: Optional[StorageMetadata] = None, # why is metadata passed 
+        metadata: Optional[StorageMetadata] = None,  # why is metadata passed
     ):
         if context.metadata is None:
             raise ValueError("You need to provide metadata to the asset.")
 
-        delta_write_options = context.metadata.get("delta_write_options") # This needs to be gone and just only key value on the metadata
+        delta_write_options = context.metadata.get(
+            "delta_write_options"
+        )  # This needs to be gone and just only key value on the metadata
 
         if context.has_asset_partitions:
             delta_write_options = delta_write_options or {}
-            partition_by = context.metadata.get("partition_by")  # this could be wrong, you could have partition_by in delta_write_options and in the metadata
+            partition_by = context.metadata.get(
+                "partition_by"
+            )  # this could be wrong, you could have partition_by in delta_write_options and in the metadata
 
             if partition_by is not None:
                 assert context.partition_key is not None, 'can\'t set "partition_by" for an asset without partitions'
@@ -217,13 +219,13 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         if delta_write_options is not None:
             context.log.debug(f"Writing with delta_write_options: {pformat(delta_write_options)}")
-        
+
         storage_options = self.get_storage_options(path)
         try:
             dt = DeltaTable(str(path), storage_options=storage_options)
         except TableNotFoundError:
             dt = str(path)
-        
+
         df.write_delta(
             dt,
             mode=context.metadata.get("mode") or self.mode,  # type: ignore
@@ -348,11 +350,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             version = int(version_from_metadata)
 
         if version is None:
-            return DeltaTable(
-                str(path),
-                storage_options=self.get_storage_options(path),
-                without_files=True
-            ).version()
+            return DeltaTable(str(path), storage_options=self.get_storage_options(path), without_files=True).version()
         else:
             return version
 

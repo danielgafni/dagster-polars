@@ -233,18 +233,19 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     def dump_to_path(
         self,
         context: OutputContext,
-        obj: Union[pl.DataFrame, 
-                   Optional[pl.DataFrame], 
-                   Tuple[pl.DataFrame, Dict[str, Any]],
-                   pl.LazyFrame, 
-                   Optional[pl.LazyFrame], 
-                   Tuple[pl.LazyFrame, Dict[str, Any]],
-                   ],
+        obj: Union[
+            pl.DataFrame,
+            Optional[pl.DataFrame],
+            Tuple[pl.DataFrame, Dict[str, Any]],
+            pl.LazyFrame,
+            Optional[pl.LazyFrame],
+            Tuple[pl.LazyFrame, Dict[str, Any]],
+        ],
         path: "UPath",
         partition_key: Optional[str] = None,
     ):
         typing_type = context.dagster_type.typing_type
-        
+
         if annotation_is_typing_optional(typing_type) and (
             obj is None or annotation_for_storage_metadata(typing_type) and obj[0] is None
         ):
@@ -268,7 +269,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
                     frame_type = get_args(typing_type)[0]
                 else:
                     frame_type = get_args(get_args(typing_type)[0])[0]
-                
+
                 if frame_type == pl.DataFrame:
                     obj = cast(Tuple[pl.DataFrame, Dict[str, Any]], obj)
                     df, metadata = obj
@@ -279,7 +280,6 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
                     self.sink_df_to_path(context=context, df=df, path=path, metadata=metadata)
                 else:
                     raise NotImplementedError
-                    
 
     def load_from_path(
         self, context: InputContext, path: "UPath", partition_key: Optional[str] = None
@@ -342,14 +342,16 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         else:
             raise NotImplementedError(f"Can't load object for type annotation {context.dagster_type.typing_type}")
 
-    def get_metadata(self, context: OutputContext, obj: Union[pl.DataFrame, pl.LazyFrame, None]) -> Dict[str, MetadataValue]:
+    def get_metadata(
+        self, context: OutputContext, obj: Union[pl.DataFrame, pl.LazyFrame, None]
+    ) -> Dict[str, MetadataValue]:
         if obj is None:
             return {"missing": MetadataValue.bool(True)}
         else:
             if annotation_for_storage_metadata(context.dagster_type.typing_type):
                 df = obj[0]
             else:
-                df = obj    
+                df = obj
             return get_polars_metadata(context, df) if df is not None else {"missing": MetadataValue.bool(True)}
 
     @staticmethod
