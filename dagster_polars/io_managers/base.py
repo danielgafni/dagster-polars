@@ -28,7 +28,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.storage.upath_io_manager import is_dict_type
-from pydantic.fields import Field, PrivateAttr
+from pydantic.fields import Field
 
 from dagster_polars.io_managers.utils import get_polars_metadata
 from dagster_polars.types import (
@@ -144,14 +144,16 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     """
 
     base_dir: Optional[str] = Field(default=None, description="Base directory for storing files.")
-
-    _base_path: "UPath" = PrivateAttr()
+    cloud_storage_options: Optional[Dict[str, str]] = Field(
+        default=None, description="Storage authentication for cloud object store"
+    )
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         from upath import UPath
 
+        sp = self.cloud_storage_options if self.cloud_storage_options is not None else {}
         self._base_path = (
-            UPath(self.base_dir)
+            UPath(self.base_dir, **sp)
             if self.base_dir is not None
             else UPath(check.not_none(context.instance).storage_directory())
         )
@@ -353,17 +355,6 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             else:
                 df = obj
             return get_polars_metadata(context, df) if df is not None else {"missing": MetadataValue.bool(True)}
-
-    @staticmethod
-    def get_storage_options(path: "UPath") -> dict:
-        storage_options = {}
-
-        try:
-            storage_options.update(path.storage_options.copy())
-        except AttributeError:
-            pass
-
-        return storage_options
 
     def get_path_for_partition(
         self, context: Union[InputContext, OutputContext], path: "UPath", partition: str

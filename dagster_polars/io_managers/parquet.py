@@ -97,7 +97,6 @@ def scan_parquet(path: "UPath", context: InputContext) -> pl.LazyFrame:
     if Version(pl.__version__) > Version("0.19.4"):
         kwargs["hive_partitioning"] = context.metadata.get("hive_partitioning", True)
         kwargs["retries"] = context.metadata.get("retries", 0)
-
     return pl.scan_parquet(str(path), storage_options=storage_options, **kwargs)  # type: ignore
 
 
@@ -268,7 +267,7 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
             elif fs is not None:
                 with fs.open(str(path), mode="wb") as f:
                     df.write_parquet(
-                        f, # type: ignore
+                        f,  # type: ignore
                         compression=compression,  # type: ignore
                         compression_level=compression_level,
                         statistics=statistics,

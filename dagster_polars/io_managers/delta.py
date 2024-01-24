@@ -220,7 +220,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         if delta_write_options is not None:
             context.log.debug(f"Writing with delta_write_options: {pformat(delta_write_options)}")
 
-        storage_options = self.get_storage_options(path)
+        storage_options = self.storage_options
         try:
             dt = DeltaTable(str(path), storage_options=storage_options)
         except TableNotFoundError:
@@ -261,7 +261,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             version=version,
             delta_table_options=context.metadata.get("delta_table_options"),
             pyarrow_options=context.metadata.get("pyarrow_options"),
-            storage_options=self.get_storage_options(path),
+            storage_options=self.storage_options,
         )
 
         if with_metadata:
@@ -323,9 +323,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 path = self._get_path(context)
                 # we need to get row_count from the full table
                 metadata["row_count"] = MetadataValue.int(
-                    DeltaTable(str(path), storage_options=self.get_storage_options(path))
-                    .to_pyarrow_dataset()
-                    .count_rows()
+                    DeltaTable(str(path), storage_options=self.storage_options).to_pyarrow_dataset().count_rows()
                 )
 
         return metadata
@@ -350,7 +348,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             version = int(version_from_metadata)
 
         if version is None:
-            return DeltaTable(str(path), storage_options=self.get_storage_options(path), without_files=True).version()
+            return DeltaTable(str(path), storage_options=self.storage_options, without_files=True).version()
         else:
             return version
 
