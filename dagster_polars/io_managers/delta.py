@@ -295,7 +295,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         return path / partition  # partitioning is handled by the IOManager
 
-    def get_metadata(self, context: OutputContext, obj: pl.DataFrame) -> Dict[str, MetadataValue]:
+    def get_metadata(
+        self, context: OutputContext, obj: Union[pl.DataFrame, pl.LazyFrame, None]
+    ) -> Dict[str, MetadataValue]:
         assert context.metadata is not None
 
         metadata = super().get_metadata(context, obj)
