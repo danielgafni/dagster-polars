@@ -23,12 +23,12 @@ def dagster_instance(tmp_path_factory: TempPathFactory) -> DagsterInstance:
 
 @pytest.fixture
 def polars_parquet_io_manager(dagster_instance: DagsterInstance) -> PolarsParquetIOManager:
-    return PolarsParquetIOManager(base_dir=dagster_instance.storage_directory())
+    return PolarsParquetIOManager(base_path=dagster_instance.storage_directory())
 
 
 @pytest.fixture
 def polars_delta_io_manager(dagster_instance: DagsterInstance) -> PolarsDeltaIOManager:
-    return PolarsDeltaIOManager(base_dir=dagster_instance.storage_directory())
+    return PolarsDeltaIOManager(base_path=dagster_instance.storage_directory())
 
 
 @pytest.fixture(scope="session")
@@ -41,7 +41,7 @@ def session_polars_parquet_io_manager(
     session_scoped_dagster_instance: DagsterInstance,
 ) -> PolarsParquetIOManager:
     return PolarsParquetIOManager(
-        base_dir=session_scoped_dagster_instance.storage_directory()
+        base_path=session_scoped_dagster_instance.storage_directory()
     )  # to use with hypothesis
 
 
@@ -49,7 +49,7 @@ def session_polars_parquet_io_manager(
 def session_polars_delta_io_manager(
     session_scoped_dagster_instance: DagsterInstance,
 ) -> PolarsDeltaIOManager:
-    return PolarsDeltaIOManager(base_dir=session_scoped_dagster_instance.storage_directory())  # to use with hypothesis
+    return PolarsDeltaIOManager(base_path=session_scoped_dagster_instance.storage_directory())  # to use with hypothesis
 
 
 main_data = {
@@ -103,7 +103,7 @@ def io_manager_and_df(  # to use without hypothesis
     frame: pl.DataFrame,
     dagster_instance: DagsterInstance,
 ) -> Tuple[BasePolarsUPathIOManager, pl.DataFrame]:
-    return io_manager(base_dir=dagster_instance.storage_directory()), frame
+    return io_manager(base_path=dagster_instance.storage_directory()), frame
 
 
 @pytest_cases.fixture
@@ -116,4 +116,4 @@ def io_manager_and_lazy_df(  # to use without hypothesis
     frame: pl.LazyFrame,
     dagster_instance: DagsterInstance,
 ) -> Tuple[BasePolarsUPathIOManager, pl.LazyFrame]:
-    return io_manager(base_dir=dagster_instance.storage_directory()), frame
+    return io_manager(base_path=dagster_instance.storage_directory()), frame

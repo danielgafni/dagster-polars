@@ -19,6 +19,7 @@ from dagster import (
 from deltalake import DeltaTable
 from hypothesis import given, settings
 from polars.testing.parametric import dataframes
+from upath import UPath
 
 from dagster_polars import PolarsDeltaIOManager
 from dagster_polars.io_managers.delta import DeltaWriteMode
@@ -158,7 +159,7 @@ def test_polars_delta_io_manager_overwrite_schema(
     # test IOManager configuration works too
     @asset(
         io_manager_def=PolarsDeltaIOManager(
-            base_dir=dagster_instance.storage_directory(),
+            base_path=UPath(dagster_instance.storage_directory()),
             mode=DeltaWriteMode.overwrite,
             overwrite_schema=True,
         )
@@ -241,7 +242,7 @@ def test_polars_delta_io_manager_overwrite_schema_lazy(
     # test IOManager configuration works too
     @asset(
         io_manager_def=PolarsDeltaIOManager(
-            base_dir=dagster_instance.storage_directory(),
+            base_path=UPath(dagster_instance.storage_directory()),
             mode=DeltaWriteMode.overwrite,
             overwrite_schema=True,
         )

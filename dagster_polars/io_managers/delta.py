@@ -7,6 +7,7 @@ import dagster._check as check
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
 from dagster._core.storage.upath_io_manager import is_dict_type
+from upath import UPath
 
 from dagster_polars.types import DataFrameWithMetadata, LazyFrameWithMetadata, StorageMetadata
 
@@ -112,10 +113,25 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 ...
     """
 
-    extension: str = ".delta"  # type: ignore
-    mode: DeltaWriteMode = DeltaWriteMode.overwrite.value  # type: ignore
-    overwrite_schema: bool = False
-    version: Optional[int] = None
+    def __init__(
+        self,
+        base_path: Optional[Union["UPath", str]] = None,
+        mode: DeltaWriteMode | str = DeltaWriteMode.overwrite.value,
+        overwrite_schema: bool = False,
+        version: Optional[int] = None,
+    ):
+        if isinstance(base_path, str):
+            base_path = UPath(base_path)
+
+        self.extension = ".delta"
+        self._base_path = base_path or UPath(".")
+
+        if isinstance(mode, DeltaWriteMode):
+            self.mode = mode.value
+        else:
+            self.mode = DeltaWriteMode(mode).value
+        self.overwrite_schema = overwrite_schema
+        self.version = version
 
     # tmp fix until UPathIOManager supports this: added special handling for loading all partitions of an asset
 

@@ -17,8 +17,6 @@ from typing import (
 
 import polars as pl
 from dagster import (
-    ConfigurableIOManager,
-    InitResourceContext,
     InputContext,
     MetadataValue,
     OutputContext,
@@ -28,7 +26,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.storage.upath_io_manager import is_dict_type
-from pydantic.fields import Field
+from upath import UPath
 
 from dagster_polars.io_managers.utils import get_polars_metadata
 from dagster_polars.types import (
@@ -128,7 +126,7 @@ def annotation_for_storage_metadata(annotation) -> bool:
         return annotation_is_tuple_with_metadata(annotation)
 
 
-class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
+class BasePolarsUPathIOManager(UPathIOManager):
     """Base class for `dagster-polars` IOManagers.
 
     Doesn't define a specific storage format.
@@ -143,20 +141,13 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
      - the `"columns"` input metadata value can be used to select a subset of columns to load
     """
 
-    base_dir: Optional[str] = Field(default=None, description="Base directory for storing files.")
-    cloud_storage_options: Optional[Dict[str, str]] = Field(
-        default=None, description="Storage authentication for cloud object store"
-    )
-
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        from upath import UPath
-
-        sp = self.cloud_storage_options if self.cloud_storage_options is not None else {}
-        self._base_path = (
-            UPath(self.base_dir, **sp)
-            if self.base_dir is not None
-            else UPath(check.not_none(context.instance).storage_directory())
-        )
+    def __init__(
+        self,
+        base_path: Optional[Union["UPath", str]] = None,
+    ):
+        if isinstance(base_path, str):
+            base_path = UPath(base_path)
+        self._base_path = base_path or UPath(".")
 
     @abstractmethod
     def write_df_to_path(
