@@ -39,7 +39,7 @@ jobs:
           - "1.5.1"
           - "1.6.0"
         polars_version:
-          - "0.20.6"
+          - "0.20"
     steps:
       - name: Setup python for test ${{ matrix.py }}
         uses: actions/setup-python@v2
