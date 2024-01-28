@@ -5,6 +5,7 @@ import polars as pl
 import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 from dagster import InputContext, OutputContext
+from dagster._annotations import experimental
 from fsspec.implementations.local import LocalFileSystem
 from packaging.version import Version
 from pyarrow import Table
@@ -74,6 +75,7 @@ def scan_parquet(path: "UPath", context: InputContext) -> pl.LazyFrame:
     return pl.scan_parquet(str(path), storage_options=storage_options, **kwargs)  # type: ignore
 
 
+@experimental
 class PolarsParquetIOManager(BasePolarsUPathIOManager):
     """Implements reading and writing Polars DataFrames in Apache Parquet format.
 

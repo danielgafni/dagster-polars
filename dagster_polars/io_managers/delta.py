@@ -6,8 +6,10 @@ from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Union, overload
 import dagster._check as check
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
+from dagster._annotations import experimental
 from dagster._core.storage.upath_io_manager import is_dict_type
 
+from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 from dagster_polars.types import DataFrameWithMetadata, LazyFrameWithMetadata, StorageMetadata
 
 try:
@@ -15,8 +17,6 @@ try:
     from deltalake.exceptions import TableNotFoundError
 except ImportError as e:
     raise ImportError("Install 'dagster-polars[deltalake]' to use DeltaLake functionality") from e
-
-from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 
 if TYPE_CHECKING:
     from upath import UPath
@@ -34,6 +34,7 @@ class DeltaWriteMode(str, Enum):
     ignore = "ignore"
 
 
+@experimental
 class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     """Implements writing and reading DeltaLake tables.
 
