@@ -61,11 +61,9 @@ def scan_parquet(path: "UPath", context: InputContext) -> pl.LazyFrame:
         rechunk=context_metadata.get("rechunk", True),
         low_memory=context_metadata.get("low_memory", False),
         use_statistics=context_metadata.get("use_statistics", True),
+        hive_partitioning=context_metadata.get("hive_partitioning", True),
+        retries=context_metadata.get("retries", 0),
     )
-    if Version(pl.__version__) > Version("0.19.4"):
-        kwargs["hive_partitioning"] = context_metadata.get("hive_partitioning", True)
-        kwargs["retries"] = context_metadata.get("retries", 0)
-
     if Version(pl.__version__) >= Version("0.20.4"):
         kwargs["row_index_name"] = context_metadata.get("row_index_name", None)
         kwargs["row_index_offset"] = context_metadata.get("row_index_offset", 0)
