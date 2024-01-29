@@ -7,6 +7,11 @@ concurrency:
 on:
   workflow_dispatch:
   push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
   release:
     types:
       - created
@@ -31,13 +36,10 @@ jobs:
           - "3.9"
           - "3.8"
         dagster_version:
-          - "1.4.0"
-          - "1.5.0"
+          - "1.5.1"
           - "1.6.0"
         polars_version:
-          - "0.17.0"
-          - "0.18.0"
-          - "0.19.0"
+          - "0.20"
     steps:
       - name: Setup python for test ${{ matrix.py }}
         uses: actions/setup-python@v2
@@ -76,13 +78,10 @@ jobs:
           - "3.9"
           - "3.8"
         dagster_version:
-          - "1.4.0"
-          - "1.5.0"
+          - "1.5.1"
           - "1.6.0"
         polars_version:
-          - "0.17.0"
-          - "0.18.0"
-          - "0.19.0"
+          - "0.20"
     steps:
       - name: Setup python for test ${{ matrix.py }}
         uses: actions/setup-python@v2

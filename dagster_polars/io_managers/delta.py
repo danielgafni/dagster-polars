@@ -1,7 +1,7 @@
 import json
 from enum import Enum
 from pprint import pformat
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Union, overload
 
 import dagster._check as check
 import polars as pl
@@ -9,14 +9,14 @@ from dagster import InputContext, MetadataValue, OutputContext
 from dagster._annotations import experimental
 from dagster._core.storage.upath_io_manager import is_dict_type
 
+from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 from dagster_polars.types import DataFrameWithMetadata, LazyFrameWithMetadata, StorageMetadata
 
 try:
     from deltalake import DeltaTable
+    from deltalake.exceptions import TableNotFoundError
 except ImportError as e:
     raise ImportError("Install 'dagster-polars[deltalake]' to use DeltaLake functionality") from e
-
-from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 
 if TYPE_CHECKING:
     from upath import UPath
@@ -180,20 +180,34 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                         " or Any: is '{type_annotation}'."
                     )
 
-    def dump_df_to_path(
+    def sink_df_to_path(
+        self,
+        context: OutputContext,
+        df: pl.LazyFrame,
+        path: "UPath",
+        metadata: Optional[StorageMetadata] = None,
+    ):
+        context_metadata = context.metadata or {}
+        streaming = context_metadata.get("streaming", False)
+        return self.write_df_to_path(context, df.collect(streaming=streaming), path, metadata)
+
+    def write_df_to_path(
         self,
         context: OutputContext,
         df: pl.DataFrame,
         path: "UPath",
-        metadata: Optional[StorageMetadata] = None,
+        metadata: Optional[StorageMetadata] = None,  # why is metadata passed
     ):
-        assert context.metadata is not None
-
-        delta_write_options = context.metadata.get("delta_write_options")
+        context_metadata = context.metadata or {}
+        delta_write_options = context_metadata.get(
+            "delta_write_options"
+        )  # This needs to be gone and just only key value on the metadata
 
         if context.has_asset_partitions:
             delta_write_options = delta_write_options or {}
-            partition_by = context.metadata.get("partition_by")
+            partition_by = context_metadata.get(
+                "partition_by"
+            )  # this could be wrong, you could have partition_by in delta_write_options and in the metadata
 
             if partition_by is not None:
                 assert context.partition_key is not None, 'can\'t set "partition_by" for an asset without partitions'
@@ -204,16 +218,23 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         if delta_write_options is not None:
             context.log.debug(f"Writing with delta_write_options: {pformat(delta_write_options)}")
 
-        storage_options = self.get_storage_options(path)
+        storage_options = self.storage_options
+        try:
+            dt = DeltaTable(str(path), storage_options=storage_options)
+        except TableNotFoundError:
+            dt = str(path)
 
         df.write_delta(
-            str(path),
-            mode=context.metadata.get("mode") or self.mode,  # type: ignore
-            overwrite_schema=context.metadata.get("overwrite_schema") or self.overwrite_schema,
+            dt,
+            mode=context_metadata.get("mode") or self.mode.value,
+            overwrite_schema=context_metadata.get("overwrite_schema") or self.overwrite_schema,
             storage_options=storage_options,
             delta_write_options=delta_write_options,
         )
-        current_version = DeltaTable(str(path), storage_options=storage_options).version()
+        if isinstance(dt, DeltaTable):
+            current_version = dt.version()
+        else:
+            current_version = DeltaTable(str(path), storage_options=storage_options, without_files=True).version()
         context.add_output_metadata({"version": current_version})
 
         if metadata is not None:
@@ -221,13 +242,25 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             metadata_path.parent.mkdir(parents=True, exist_ok=True)
             metadata_path.write_text(json.dumps(metadata))
 
-    def scan_df_from_path(  # type: ignore
+    @overload
+    def scan_df_from_path(
+        self, path: "UPath", context: InputContext, with_metadata: Literal[None, False]
+    ) -> pl.LazyFrame:
+        ...
+
+    @overload
+    def scan_df_from_path(
+        self, path: "UPath", context: InputContext, with_metadata: Literal[True]
+    ) -> LazyFrameWithMetadata:
+        ...
+
+    def scan_df_from_path(
         self,
         path: "UPath",
         context: InputContext,
         with_metadata: Optional[bool] = False,
     ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
-        assert context.metadata is not None
+        context_metadata = context.metadata or {}
 
         version = self.get_delta_version_to_load(path, context)
 
@@ -236,9 +269,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         ldf = pl.scan_delta(
             str(path),
             version=version,
-            delta_table_options=context.metadata.get("delta_table_options"),
-            pyarrow_options=context.metadata.get("pyarrow_options"),
-            storage_options=self.get_storage_options(path),
+            delta_table_options=context_metadata.get("delta_table_options"),
+            pyarrow_options=context_metadata.get("pyarrow_options"),
+            storage_options=self.storage_options,
         )
 
         if with_metadata:
@@ -272,17 +305,19 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         return path / partition  # partitioning is handled by the IOManager
 
-    def get_metadata(self, context: OutputContext, obj: pl.DataFrame) -> Dict[str, MetadataValue]:
-        assert context.metadata is not None
+    def get_metadata(
+        self, context: OutputContext, obj: Union[pl.DataFrame, pl.LazyFrame, None]
+    ) -> Dict[str, MetadataValue]:
+        context_metadata = context.metadata or {}
 
         metadata = super().get_metadata(context, obj)
 
         if context.has_asset_partitions:
-            partition_by = context.metadata.get("partition_by")
+            partition_by = context_metadata.get("partition_by")
             if partition_by is not None:
                 metadata["partition_by"] = partition_by
 
-        if context.metadata.get("mode") == "append":
+        if context_metadata.get("mode") == "append":
             # modify the medatata to reflect the fact that we are appending to the table
 
             if context.has_asset_partitions:
@@ -300,16 +335,14 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 path = self._get_path(context)
                 # we need to get row_count from the full table
                 metadata["row_count"] = MetadataValue.int(
-                    DeltaTable(str(path), storage_options=self.get_storage_options(path))
-                    .to_pyarrow_dataset()
-                    .count_rows()
+                    DeltaTable(str(path), storage_options=self.storage_options).to_pyarrow_dataset().count_rows()
                 )
 
         return metadata
 
     def get_delta_version_to_load(self, path: "UPath", context: InputContext) -> int:
-        assert context.metadata is not None
-        version_from_metadata = context.metadata.get("version")
+        context_metadata = context.metadata or {}
+        version_from_metadata = context_metadata.get("version")
 
         version_from_config = self.version
 
@@ -326,14 +359,10 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         elif version_from_metadata is not None and version_from_config is None:
             version = int(version_from_metadata)
 
-        version = DeltaTable(
-            str(path),
-            storage_options=self.get_storage_options(path),
-            version=version,
-        ).version()
-
-        assert version is not None, "DeltaTable version is None. This should not happen."
-        return version
+        if version is None:
+            return DeltaTable(str(path), storage_options=self.storage_options, without_files=True).version()
+        else:
+            return version
 
     def get_storage_metadata_path(self, path: "UPath", version: int) -> "UPath":
         return path / DAGSTER_POLARS_STORAGE_METADATA_SUBDIR / f"{version}.json"
