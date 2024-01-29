@@ -145,7 +145,7 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
     Doesn't define a specific storage format.
 
-    To implement a specific storage format (parquet, csv, etc), inherit from this class and implement the `write_to_path` and `scan_from_path` methods.
+    To implement a specific storage format (parquet, csv, etc), inherit from this class and implement the `write_df_to_path` and `scan_df_from_path` methods.
 
     Features:
      - All the features of :py:class:`~dagster.UPathIOManager` - works with local and remote filesystems (like S3), supports loading multiple partitions with respect to :py:class:`~dagster.PartitionMapping`, and more
