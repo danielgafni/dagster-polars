@@ -14,6 +14,8 @@
 
 # Project moved
 
-`dagster-polars` integration has been [merged](https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-polars) into Dagster's monorepo. 
+`dagster-polars` integration has been [merged](https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-polars) into Dagster's monorepo. Please create `dagster-polars` related issues there and tag `@danielgafni`.
 
-API documentation can be found [here](https://docs.dagster.io/_apidocs/libraries/dagster-polars). 
+# Documentation
+
+API documentation can be found [here](https://docs.dagster.io/_apidocs/libraries/dagster-polars).
